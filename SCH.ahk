@@ -1,5 +1,5 @@
 Progress, zh0 fs18, CIS shortcut keys set up. Press Ctrl+? for help.
-Sleep, 1500
+Sleep, 1100
 Progress, Off
 
 FileCreateDir, img
@@ -19,63 +19,6 @@ FileInstall, img\ordersall.png, img\ordersall.png, 1
 FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\checked.PNG, img\checked.PNG, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
-
-^?::
-^/::
-title =
-(
-These shortcuts can be used in CIS and FirstNet:
-)
-col1 = 
-(
-Ctrl+Shift+Alt + C - CORES
-Ctrl+Shift+Alt + P - Patient List
-Ctrl+Shift+Alt + O - Orders
-Ctrl+Shift+Alt + V - Vitals
-Ctrl+Shift+Alt + L - Labs
-Ctrl+Shift+Alt + N - Notes
-Ctrl+Shift+Alt + M - Documents
-
-Ctrl + ? - This help screen
-)  
-col2 = 
-(
-Ctrl+Shift + R - Refresh
-Ctrl+Shift + W - Close Chart
-
-Ctrl+K then * - Check boxes (vitals)
-
-Ctrl+K then D - Add Order or Note
-
-Ctrl+K then N - Next clipboard
-Ctrl+K then R - Mark clipboard read
-Ctrl+K then ! - Clear all clipboards
-)  
-  h := 230
-  w := 450
-  titleh := 40
-  colh := h - titleh
-  colw := w/2 - 10
-  col2x := w/2 - 10
-  x := (A_ScreenWidth - w)
-  y := (A_ScreenHeight - h)
-
-  Gui, Font, s12
-  Gui, Add, Text, x6 y6 w%w% h%titleh%, %title%
-  
-  Gui, Font, s10
-  Gui, Add, Text, x6 y%titleh% w%colw% h%colh% , %col1%
-  Gui, Add, Text, x%col2x% y%titleh% w%colw% h%colh% , %col2%
-
-  Gui, -caption
-  Gui, +alwaysontop +Toolwindow
-  ;Gui, Color, 808080
-  
-  Gui, Show, x%x% y%y% h%h% w%w% NoActivate, CIS Shortcut Key
-  
-  Input, key, I L1
-  Gui, Destroy
-Return
 
 ; Test function - Ctrl+Shift+Alt+T
 ;^!+t::
@@ -203,7 +146,9 @@ Return
   MouseGetPos X, Y
   MouseClick, , 190, 40
   MouseClick, , 190, 120
+  CursorNotBusyWait()
   ImageWait("vitalsigns.png")
+  Sleep, 300
   ImageClick("vitalsigns.png")
   MouseMove, %X%, %Y%
 Return
@@ -274,7 +219,7 @@ Return
   ; All orders
   if (key = "a") {
     ImageClick("dropdown.png")
-    Sleep, 200
+    Sleep, 500
     if (not ImageClick("ordersall.png"))
       Shake()
 
@@ -377,4 +322,67 @@ Return
   }
 
   MouseMove, %X%, %Y%
+Return
+
+; -------------------------------------------------
+; Help screen
+; -------------------------------------------------
+#If
+^?::
+^/::
+title =
+(
+These shortcuts can be used in CIS and FirstNet:
+)
+col1 = 
+(
+Ctrl+Shift+Alt + C - CORES
+Ctrl+Shift+Alt + P - Patient List
+Ctrl+Shift+Alt + O - Orders
+Ctrl+Shift+Alt + V - Vitals
+Ctrl+Shift+Alt + L - Labs
+Ctrl+Shift+Alt + N - Notes
+Ctrl+Shift+Alt + M - Documents
+
+Ctrl+Shift + R - Refresh
+Ctrl+Shift + W - Close Chart
+)  
+col2 = 
+(
+Ctrl+K then * - Check boxes (vitals)
+
+Ctrl+K then D - Add Order or Note
+Ctrl+K then A - All Orders
+Ctrl+K then S - Active Orders
+
+Ctrl+K then N - Next clipboard
+Ctrl+K then R - Mark clipboard read
+Ctrl+K then ! - Clear all clipboards
+
+Ctrl + ? - This help screen
+)  
+  h := 230
+  w := 450
+  titleh := 40
+  colh := h - titleh
+  colw := w/2 - 10
+  col2x := w/2 - 10
+  x := (A_ScreenWidth - w)
+  y := (A_ScreenHeight - h)
+
+  Gui, Font, s12
+  Gui, Add, Text, x6 y6 w%w% h%titleh%, %title%
+  
+  Gui, Font, s10
+  Gui, Add, Text, x6 y%titleh% w%colw% h%colh% , %col1%
+  Gui, Add, Text, x%col2x% y%titleh% w%colw% h%colh% , %col2%
+
+  Gui, -caption
+  Gui, +alwaysontop +Toolwindow
+  ;Gui, Color, 808080
+  
+  Gui, Show, x%x% y%y% h%h% w%w% NoActivate, CIS Shortcut Key
+  
+  Input, key, I L1
+  Gui, Destroy
 Return
