@@ -1,2 +1,2 @@
-# schapp
-Working better with the SCH EHR system
+# SCH App
+Small tools to work more efficientlywith the SCH EHR system.
