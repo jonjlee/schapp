@@ -418,7 +418,25 @@ Ctrl + ? - This help screen
   Gui, Destroy
 
   ; Allow for shortcuts to be launched directly from the help screen
-  if (key = "a") {
+  if (key = "n") {
+    ShowNotes()
+  } else if (key = "d") {
+    ShowDocuments()
+  } else if (key = "o") {
+    ShowOrders()
+  } else if (key = "v") {
+    ShowVitals()
+  } else if (key = "l") {
+    ShowLabs()
+  } else if (key = "p") {
+    ShowPatientList()
+  } else if (key = "c") {
+    ShowCores()
+  } else if (key = "w") {
+    CloseChart()
+  } else if (key = "r" and not WinActive("Flowsheet")) {
+    Refresh()
+  } else if (key = "a") {
     ShowAllOrders() 
   } else if (key = "d") {
     ClickAdd()
@@ -428,15 +446,11 @@ Ctrl + ? - This help screen
     ShowActiveOrders()
   } else if (key = "n") {
     OpenNextClipboard()
-  } else if (key = "r") {
+  } else if (key = "r" and WinActive("Flowsheet")) {
     MarkClipboardRead()
   } else if (key = "!") {
     MarkAllClipboardsRead()
   } else if (key = "*") {
     CheckAllCheckboxes()
-  } else if (key = " ") {
-    Click
-  } else {
-    Shake()   ; unrecognized
   }
 Return
