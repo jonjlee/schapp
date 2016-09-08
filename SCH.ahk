@@ -17,7 +17,11 @@ Loop {
 }
 Gui, Destroy
 
-FileCreateDir, img
+; Create hidden directory and install images
+if (not FileExist("img")) {
+  FileCreateDir, img
+  FileSetAttrib, +H, img
+}
 FileInstall, img\add.png, img\add.png, 1
 FileInstall, img\add2.png, img\add2.png, 1
 FileInstall, img\refresh.png, img\refresh.png, 1
@@ -366,6 +370,11 @@ Return
 ; --------------------------------------------------------------------------------
 #If
 
+; Logout
+^!+Backspace::
+  Run, C:\Windows\System32\Disconnect.exe
+Return
+
 ; -------------------------------------------------
 ; Help screen
 ; -------------------------------------------------
@@ -373,7 +382,7 @@ Return
 ^/::
   help_title =
   ( LTrim
-    Available shortcuts for CIS
+    Type a letter to trigger the associated action:
   )
   help_col1 = 
   ( LTrim
@@ -394,7 +403,7 @@ Return
 
     D - Add Order or Note  (or Ctrl+K then D)
     A - All Orders  (or Ctrl+K then A)
-    s - Active Orders  (or Ctrl+K then S)
+    S - Active Orders  (or Ctrl+K then S)
 
     N - Next clipboard  (or Ctrl+K then N)
     R - Mark clipboard read  (or Ctrl+K then R)
