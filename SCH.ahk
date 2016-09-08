@@ -1,3 +1,6 @@
+; ---------------------------------------------------------
+; Splash screen and setup
+; ---------------------------------------------------------
 Progress, zh0 fs18, CIS shortcut keys set up. Press Ctrl+? for help.
 Sleep, 1100
 Progress, Off
@@ -25,11 +28,9 @@ FileInstall, img\unchecked.png, img\unchecked.png, 1
 ;  MsgBox, %A_Desktop%
 ;Return
 
-; Only enable for CIS / FirstNet
-SetTitleMatchMode 2
-#If WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet")
-
+; ---------------------------------------------------------
 ; Helpers
+; ---------------------------------------------------------
 Shake()
 {
   MouseGetPos X, Y
@@ -116,22 +117,20 @@ CursorNotBusyWait(sec:=5) {
 ; -----------------------------------------------------------------------------
 ; Main tasks
 ; -----------------------------------------------------------------------------
-; Notes via menu
-^!+n::
+ShowNotes() {
+  ; Notes via menu
   MouseClick, , 190, 40
   MouseClick, , 190, 340
   MouseMove, 250, 360
-Return
-
-; Documents via menu
-^!+m::
+}
+ShowDocuments() {
+  ; Documents via menu
   MouseClick, , 190, 40
   MouseClick, , 190, 325
   MouseMove, 240, 290
-Return
-
-; Orders via menu. Leave mouse on Add button.
-^!+o::
+}
+ShowOrders() {
+  ; Orders via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
   MouseClick, , 190, 95
@@ -139,10 +138,9 @@ Return
 
   ;MouseClick, , 730, 350   ; focus order list
   ;MouseMove, 240, 230	    ; hover over add button
-Return
-
-; Vitals via menu with default vitals (HR, BP, etc) to trend selected
-^!+v::
+}
+ShowVitals() {
+  ; Vitals via menu with default vitals (HR, BP, etc) to trend selected
   MouseGetPos X, Y
   MouseClick, , 190, 40
   MouseClick, , 190, 120
@@ -151,61 +149,171 @@ Return
   Sleep, 300
   ImageClick("vitalsigns.png")
   MouseMove, %X%, %Y%
-Return
-
-; Labs via menu
-^!+l::
+}
+ShowLabs() {
+  ; Labs via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
   MouseClick, , 190, 140
   MouseMove, %X%, %Y%
-Return
-
-; Patient List via menu
-^!+p::
+}
+ShowPatientList() {
+  ; Patient List via menu
   MouseGetPos X, Y
   MouseClick, , 350, 60
   MouseClick, , 250, 900
   MouseMove, %X%, %Y%
-Return
-
-; CORES via menu
-^!+c::
+}
+ShowCores() {
+  ; CORES via menu
   MouseGetPos X, Y
   MouseClick, , 100, 40
   MouseClick, , 100, 205
   MouseMove, %X%, %Y%
-Return  
+}  
 
 ; -----------------------------------------------------------------------------
 ; Common secondary tasks - Ctrl+Shift+letter
 ; -----------------------------------------------------------------------------
-; Close chart via x button
-^!+w::
-^+w::
+CloseChart() {
+  ; Close chart via x button
   MouseGetPos X, Y
   ImageClick("*100 " . A_ScriptDir . "\img\close.png")
   MouseMove, %X%, %Y%
-Return
-
-; Refresh (click both button locations)
-^!+r::
-^+r::
+}
+Refresh() {
   MouseGetPos X, Y
   ImageClick("refresh.png")
   MouseMove, %X%, %Y%
-Return
-
-; Focus (order list, patient list)
-^+Space::
-  MouseGetPos X, Y
-  MouseClick, , 610, 850
-  MouseMove, %X%, %Y%
-Return
+}
 
 ; -----------------------------------------------------------------------------
 ; Less common secondary tasks - activate by Ctrl+K followed by another letter
 ; -----------------------------------------------------------------------------
+OpenNextClipboard() {
+  ; Next clipboard (click 2nd clipboard icon - first one is column header)
+  if (not ImageClick("clipboard.png", 2)) {
+    Shake()
+  }
+}
+MarkClipboardRead() {
+  ; Mark clipboard as read & refresh
+  ImageClick("seen.png")
+  ImageClick("exit.png")
+
+  ; Wait for results popup to disappear and main window to reactivate
+  WinWait("PowerChart")
+  CursorNotBusyWait()
+
+  ImageClick("refresh.png")
+}
+MarkAllClipboardsRead() {
+  ; Mark all clipboards as read & refresh
+  ImageClick("refresh.png")
+  Sleep, 500
+  
+  ; Find all clipboard icons and click one at a time. Skip first one, which is column header
+  ImageSearchAll(icons, "clipboard.png")
+  icons.RemoveAt(1)
+  for i, icon in icons {
+    MouseClick, , % icon[1], % icon[2]
+
+    ; Wait 500ms for possible abort - press any key to abort 
+    Input, key, I L1 T0.5
+    if (key <> "") {
+      Shake()
+      Return
+    }
+
+    CursorNotBusyWait()
+    ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, *20 %A_ScriptDir%\img\primaryres.png
+    if (ErrorLevel = 0) {
+      ImageClick("primaryres.png")
+      Click 2
+      Sleep, 300
+    }
+    
+    CursorNotBusyWait()
+    if (not ImageWait("seen.png", 20)) {
+      Shake()
+      Return
+    }
+    
+    Sleep, 500
+    ImageClick("seen.png")
+    ImageClick("exit.png")
+
+    CursorNotBusyWait()
+    if (not WinWait("PowerChart")) {
+      Shake()
+      Return
+    }
+  }
+
+  ImageClick("refresh.png")
+}
+CheckAllCheckboxes() {
+  ; select all unchecked boxes on screen
+  ImageSearchAll(checkboxes, "unchecked.png")
+  for i, checkbox in checkboxes {
+    MouseClick, , % checkbox[1], % checkbox[2]
+  }
+}
+ShowAllOrders() {
+  ; Click dropdown, wait for menu to show, then select All Orders
+  ImageClick("dropdown.png")
+  Sleep, 500
+  if (not ImageClick("ordersall.png")) {
+    Shake()
+  }
+}
+ShowActiveOrders() {
+  ; Click dropdown, wait for menu to show, then select Active Orders
+  ImageClick("dropdown.png")
+  Sleep, 200
+  if (not ImageClick("ordersactive.png")) {
+    Shake()
+  }
+}
+ClickAdd() {
+  ; Add button on Orders and Notes tabs
+  if (not ImageClick("add.png")) {
+    if (not ImageClick("add2.png")) {
+      Shake()
+    }
+  }
+}
+ClickGraph() {
+  ; Graph button
+  if (not ImageClick("graph.png")) {
+    Shake()
+  }
+}
+
+; -----------------------------------------------------------------------------
+; Shortcut keys
+; -----------------------------------------------------------------------------
+
+; CIS / FirstNet shortcuts - only trigger when active window's title matches 
+SetTitleMatchMode 2
+#If WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet")
+
+; Main tasks
+^!+n::ShowNotes()
+^!+m::ShowDocuments()
+^!+o::ShowOrders()
+^!+v::ShowVitals()
+^!+l::ShowLabs()
+^!+p::ShowPatientList()
+^!+c::ShowCores()
+
+; Common secondary tasks - Ctrl+Shift+letter
+^!+w::CloseChart()
+^+w::CloseChart()
+^!+r::Refresh()
+^+r::Refresh()
+
+; Less common secondary tasks - activate by Ctrl+K followed by another letter
 ^k::
 ^!+k::
   Input, key, I L1 T1
@@ -216,125 +324,44 @@ Return
 
   MouseGetPos X, Y
 
-  ; All orders
   if (key = "a") {
-    ImageClick("dropdown.png")
-    Sleep, 500
-    if (not ImageClick("ordersall.png"))
-      Shake()
-
-  ; Add (order)
+    ShowAllOrders() 
   } else if (key = "d") {
-    if (not ImageClick("add.png")) {
-      if (not ImageClick("add2.png")) {
-        Shake()
-      }
-    }
-
-  ; Graph
+    ClickAdd()
   } else if (key = "g") {
-    if (not ImageClick("graph.png")) {
-      Shake()
-    }
-
-  ; Active orders
+    ClickGraph()
   } else if (key = "s") {
-    ImageClick("dropdown.png")
-    Sleep, 200
-    if (not ImageClick("ordersactive.png"))
-      Shake()
-
-  ; Next clipboard (click 2nd clipboard icon - first one is column header)
+    ShowActiveOrders()
   } else if (key = "n") {
-    if (not ImageClick("clipboard.png", 2))
-      Shake()
-
-  ; Mark clipboard as read & refresh
+    OpenNextClipboard()
   } else if (key = "r") {
-    ImageClick("seen.png")
-    ImageClick("exit.png")
-
-    ; Wait for results popup to disappear and main window to reactivate
-    WinWait("PowerChart")
-    CursorNotBusyWait()
-
-    ImageClick("refresh.png")
- 
-  ; Mark all clipboards as read & refresh
+    MarkClipboardRead()
   } else if (key = "!") {
-    ImageClick("refresh.png")
-    Sleep, 500
-    
-    ; Find all clipboard icons and click one at a time. Skip first one, which is column header
-    ImageSearchAll(icons, "clipboard.png")
-    icons.RemoveAt(1)
-    for i, icon in icons {
-      MouseClick, , % icon[1], % icon[2]
-
-      ; Wait 500ms for possible abort - press any key to abort 
-      Input, key, I L1 T0.5
-      if (key <> "") {
-        Shake()
-        Return
-      }
-
-      CursorNotBusyWait()
-      ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, *20 %A_ScriptDir%\img\primaryres.png
-      if (ErrorLevel = 0) {
-        ImageClick("primaryres.png")
-        Click 2
-        Sleep, 300
-      }
-      
-      CursorNotBusyWait()
-      if (not ImageWait("seen.png", 20)) {
-        Shake()
-        Return
-      }
-      
-      Sleep, 500
-      ImageClick("seen.png")
-      ImageClick("exit.png")
-
-      CursorNotBusyWait()
-      if (not WinWait("PowerChart")) {
-        Shake()
-        Return
-      }
-    }
-
-    ImageClick("refresh.png")
-  
-  ; select all unchecked boxes on screen
+    MarkAllClipboardsRead()
   } else if (key = "*") {
-    ImageSearchAll(checkboxes, "unchecked.png")
-    for i, checkbox in checkboxes {
-      MouseClick, , % checkbox[1], % checkbox[2]
-    }
-
-  ; click mouse
+    CheckAllCheckboxes()
   } else if (key = " ") {
     Click
-  
-  ; unrecognized
   } else {
-    Shake()
+    Shake()   ; unrecognized
   }
 
   MouseMove, %X%, %Y%
 Return
 
+; --------------------------------------------------------------------------------
+; Global shortcuts below this point - not restricted to certain active windows
+; --------------------------------------------------------------------------------
+#If
+
 ; -------------------------------------------------
 ; Help screen
 ; -------------------------------------------------
-#If
-^?::
-^/::
-title =
+help_title =
 (
 These shortcuts can be used in CIS and FirstNet:
 )
-col1 = 
+help_col1 = 
 (
 Ctrl+Shift+Alt + C - CORES
 Ctrl+Shift+Alt + P - Patient List
@@ -347,7 +374,7 @@ Ctrl+Shift+Alt + M - Documents
 Ctrl+Shift + R - Refresh
 Ctrl+Shift + W - Close Chart
 )  
-col2 = 
+help_col2 = 
 (
 Ctrl+K then * - Check boxes (vitals)
 
@@ -361,6 +388,9 @@ Ctrl+K then ! - Clear all clipboards
 
 Ctrl + ? - This help screen
 )  
+
+^?::
+^/::
   h := 230
   w := 450
   titleh := 40
@@ -383,6 +413,30 @@ Ctrl + ? - This help screen
   
   Gui, Show, x%x% y%y% h%h% w%w% NoActivate, CIS Shortcut Key
   
+
   Input, key, I L1
   Gui, Destroy
+
+  ; Allow for shortcuts to be launched directly from the help screen
+  if (key = "a") {
+    ShowAllOrders() 
+  } else if (key = "d") {
+    ClickAdd()
+  } else if (key = "g") {
+    ClickGraph()
+  } else if (key = "s") {
+    ShowActiveOrders()
+  } else if (key = "n") {
+    OpenNextClipboard()
+  } else if (key = "r") {
+    MarkClipboardRead()
+  } else if (key = "!") {
+    MarkAllClipboardsRead()
+  } else if (key = "*") {
+    CheckAllCheckboxes()
+  } else if (key = " ") {
+    Click
+  } else {
+    Shake()   ; unrecognized
+  }
 Return
