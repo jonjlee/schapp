@@ -1,9 +1,21 @@
 ; ---------------------------------------------------------
 ; Splash screen and setup
 ; ---------------------------------------------------------
-Progress, zh0 fs18, CIS shortcut keys set up. Press Ctrl+? for help.
-Sleep, 1100
-Progress, Off
+splash_h := 100
+splash_w := 400
+splash_x := A_ScreenWidth - splash_w - 25
+splash_y := A_ScreenHeight - splash_h - 25
+Gui, Font, s14
+Gui, Add, Text, x0 y10 w%splash_w% center, CIS shortcuts enabled. Ctrl+? for help.
+Gui, -Caption +alwaysontop +Toolwindow +Border
+Gui, Show, x%splash_x% y%splash_y% w%splash_w% NoActivate,
+Sleep 100
+Loop {
+  If (A_TimeIdlePhysical < 100 or A_TimeIdlePhysical > 2000) {
+    break
+  }
+}
+Gui, Destroy
 
 FileCreateDir, img
 FileInstall, img\add.png, img\add.png, 1
@@ -23,7 +35,7 @@ FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\checked.PNG, img\checked.PNG, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
 
-; Test function - Ctrl+Shift+Alt+T
+; Test function - Ctrl+Shift+Alt+Ta
 ;^!+t::
 ;  MsgBox, %A_Desktop%
 ;Return
@@ -357,58 +369,57 @@ Return
 ; -------------------------------------------------
 ; Help screen
 ; -------------------------------------------------
-help_title =
-(
-These shortcuts can be used in CIS and FirstNet:
-)
-help_col1 = 
-(
-Ctrl+Shift+Alt + C - CORES
-Ctrl+Shift+Alt + P - Patient List
-Ctrl+Shift+Alt + O - Orders
-Ctrl+Shift+Alt + V - Vitals
-Ctrl+Shift+Alt + L - Labs
-Ctrl+Shift+Alt + N - Notes
-Ctrl+Shift+Alt + M - Documents
-
-Ctrl+Shift + R - Refresh
-Ctrl+Shift + W - Close Chart
-)  
-help_col2 = 
-(
-Ctrl+K then * - Check boxes (vitals)
-
-Ctrl+K then D - Add Order or Note
-Ctrl+K then A - All Orders
-Ctrl+K then S - Active Orders
-
-Ctrl+K then N - Next clipboard
-Ctrl+K then R - Mark clipboard read
-Ctrl+K then ! - Clear all clipboards
-
-Ctrl + ? - This help screen
-)  
-
 ^?::
 ^/::
-  h := 230
+  help_title =
+  ( LTrim
+    Available shortcuts for CIS
+  )
+  help_col1 = 
+  ( LTrim
+    C - CORES  (or Ctrl+Shift+Alt + C)
+    P - Patient List  (or Ctrl+Shift+Alt + P)
+    O - Orders  (or Ctrl+Shift+Alt + O)
+    V - Vitals  (or Ctrl+Shift+Alt + V)
+    L - Labs  (or Ctrl+Shift+Alt + L)
+    N - Notes  (or Ctrl+Shift+Alt + N)
+    M - Documents  (or Ctrl+Shift+Alt + M)
+
+    R - Refresh  (or Ctrl+Shift + R)
+    W - Close Chart  (or Ctrl+Shift + W)
+  )  
+  help_col2 = 
+  ( LTrim
+    * - Check boxes (vitals)  (or Ctrl+K then *)
+
+    D - Add Order or Note  (or Ctrl+K then D)
+    A - All Orders  (or Ctrl+K then A)
+    s - Active Orders  (or Ctrl+K then S)
+
+    N - Next clipboard  (or Ctrl+K then N)
+    R - Mark clipboard read  (or Ctrl+K then R)
+    ! - Clear all clipboards  (or Ctrl+K then !)
+
+    Ctrl + ? - This help screen
+  )  
+
+  h := 190
   w := 450
-  titleh := 40
+  titleh := 35
   colh := h - titleh
   colw := w/2 - 10
   col2x := w/2 - 10
-  x := (A_ScreenWidth - w)
-  y := (A_ScreenHeight - h)
+  x := (A_ScreenWidth - w - 2)
+  y := (A_ScreenHeight - h - 2)
 
-  Gui, Font, s12
-  Gui, Add, Text, x6 y6 w%w% h%titleh%, %title%
+  Gui, Font, s11
+  Gui, Add, Text, x0 y10 w%w% h%titleh% center, %help_title%
   
-  Gui, Font, s10
-  Gui, Add, Text, x6 y%titleh% w%colw% h%colh% , %col1%
-  Gui, Add, Text, x%col2x% y%titleh% w%colw% h%colh% , %col2%
+  Gui, Font, s9
+  Gui, Add, Text, x10 y%titleh% w%colw% h%colh% , %help_col1%
+  Gui, Add, Text, x%col2x% y%titleh% w%colw% h%colh% , %help_col2%
 
-  Gui, -caption
-  Gui, +alwaysontop +Toolwindow
+  Gui, -Caption +AlwaysOntop +Toolwindow +Border
   ;Gui, Color, 808080
   
   Gui, Show, x%x% y%y% h%h% w%w% NoActivate, CIS Shortcut Key
