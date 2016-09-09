@@ -39,9 +39,8 @@ FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\checked.PNG, img\checked.PNG, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
 
-; Test function - Ctrl+Shift+Alt+Ta
+; Test function - Ctrl+Shift+Alt+T
 ;^!+t::
-;  MsgBox, %A_Desktop%
 ;Return
 
 ; ---------------------------------------------------------
@@ -56,17 +55,21 @@ Shake()
   }
   MouseMove, %X%, %Y%
 }
+Log(event) {
+  FormatTime, T, , yyyy-MM-dd HH:mm:ss
+  FileAppend, %T% %A_UserName% %event%`n, %A_Temp%\ahklog.txt
+}
 ImagePath(image) {
   return "*20 " . A_ScriptDir . "\img\" . image
 }
-ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0) {
+ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0) {
   if (SubStr(image, 1, 1) <> "*") {
     image := ImagePath(image)
   }
 
   Arr := []
-  lastX := 0
-  lastY := 0
+  lastX := minX
+  lastY := minY
   Loop {
     ImageSearch, X, Y, %lastX%, %lastY%, %A_ScreenWidth%, %A_ScreenHeight%, %image%
     if (ErrorLevel > 0) {
@@ -268,11 +271,21 @@ MarkAllClipboardsRead() {
 
   ImageClick("refresh.png")
 }
-CheckAllCheckboxes() {
+CheckAllCheckboxes(check:=true) {
+  Sleep 100
+  
+  img := "unchecked.png"
+  if (check = false) {
+    img := "checked.png"
+  }
+
   ; select all unchecked boxes on screen
-  ImageSearchAll(checkboxes, "unchecked.png")
+  ImageSearchAll(checkboxes, img, , , 230)
   for i, checkbox in checkboxes {
     MouseClick, , % checkbox[1], % checkbox[2]
+    if (A_TimeIdlePhysical < 100) {
+      break
+    }
   }
 }
 ShowAllOrders() {
@@ -356,6 +369,8 @@ SetTitleMatchMode 2
     MarkAllClipboardsRead()
   } else if (key = "*") {
     CheckAllCheckboxes()
+  } else if (key = "8") {
+    CheckAllCheckboxes(false)
   } else if (key = " ") {
     Click
   } else {
@@ -400,6 +415,7 @@ Return
   help_col2 = 
   ( LTrim
     * - Check boxes (vitals)  (or Ctrl+K then *)
+    8 - Unheck boxes (vitals)  (or Ctrl+K then 8)
 
     D - Add Order or Note  (or Ctrl+K then D)
     A - All Orders  (or Ctrl+K then A)
@@ -412,9 +428,9 @@ Return
     Ctrl + ? - This help screen
   )  
 
-  h := 190
-  w := 450
-  titleh := 35
+  h := 330
+  w := 500
+  titleh := 40
   colh := h - titleh
   colw := w/2 - 10
   col2x := w/2 - 10
@@ -423,10 +439,53 @@ Return
 
   Gui, Font, s11
   Gui, Add, Text, x0 y10 w%w% h%titleh% center, %help_title%
-  
+
   Gui, Font, s9
-  Gui, Add, Text, x10 y%titleh% w%colw% h%colh% , %help_col1%
-  Gui, Add, Text, x%col2x% y%titleh% w%colw% h%colh% , %help_col2%
+
+  Gui, Font, w700
+  Gui, Add, Text, Section x10 y%titleh%, Common Actions
+  Gui, Font, w100
+  Gui, Add, Text, xs, R - Refresh  (or Ctrl+Shift + R)
+  Gui, Add, Text, xs, W - Close Chart  (or Ctrl+Shift + W)
+
+  Gui, Font, w700
+  Gui, Add, Text, xs, Patient Areas
+  Gui, Font, w100
+  Gui, Add, Text, xs, C - CORES  (or Ctrl+Shift+Alt + C)
+  Gui, Add, Text, xs, P - Patient List  (or Ctrl+Shift+Alt + P)
+  Gui, Add, Text, xs, O - Orders  (or Ctrl+Shift+Alt + O)
+  Gui, Add, Text, xs, V - Vitals  (or Ctrl+Shift+Alt + V)
+  Gui, Add, Text, xs, L - Labs  (or Ctrl+Shift+Alt + L)
+  Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
+  Gui, Add, Text, xs, M - Documents  (or Ctrl+Shift+Alt + M)
+
+  Gui, Font, w700
+  Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
+  Gui, Font, w100
+  Gui, Add, Text, xs, * - Check boxes (vitals)  (or Ctrl+K then *)
+  Gui, Add, Text, xs, 8 - Unheck boxes (vitals)  (or Ctrl+K then 8)
+
+  Gui, Font, w700
+  Gui, Add, Text, xs, Orders
+  Gui, Font, w100
+  Gui, Add, Text, xs, D - Add Order or Note  (or Ctrl+K then D)
+  Gui, Add, Text, xs, A - All Orders  (or Ctrl+K then A)
+  Gui, Add, Text, xs, S - Active Orders  (or Ctrl+K then S)
+
+  Gui, Font, w700
+  Gui, Add, Text, xs, Clipboards
+  Gui, Font, w100
+  Gui, Add, Text, xs, N - Next clipboard  (or Ctrl+K then N)
+  Gui, Add, Text, xs, R - Mark clipboard read  (or Ctrl+K then R)
+  Gui, Add, Text, xs, ! - Clear all clipboards  (or Ctrl+K then !)
+
+  Gui, Font, w700
+  Gui, Add, Text, xs, Other
+  Gui, Font, w100
+  Gui, Add, Text, xs, Ctrl + ? - This help screen
+
+  ;Gui, Add, Text, x10 y%titleh% w%colw% h%colh% , %help_col1%
+  ;Gui, Add, Text, x%col2x% y%titleh% w%colw% h%colh% , %help_col2%
 
   Gui, -Caption +AlwaysOntop +Toolwindow +Border
   ;Gui, Color, 808080
@@ -472,5 +531,38 @@ Return
     MarkAllClipboardsRead()
   } else if (key = "*") {
     CheckAllCheckboxes()
+  } else if (key = "8") {
+    CheckAllCheckboxes(false)
   }
+Return
+
+; ---------------------------------------------------
+; Calculator
+; ---------------------------------------------------
+^!+3::
+  file = %A_Temp%\docalc.ahk             ; any unused filename
+  Gui, Font, s12
+  Gui Add, ComboBox, X0 Y0 W300 vExpr
+  Gui Add, Button, Default, OK     ; button activated by Enter, Gui Show cuts it off
+  Gui -Caption +Border             ; small window w/o title bar
+  Gui Show, H24 W277              ; cut off unnecessary parts
+Return
+GuiEscape:
+   Gui, Destroy
+Return
+ButtonOK:
+   GuiControlGet Expr,,Expr      ; get Expr from ComboBox
+   GuiControl,,Expr,%Expr%       ; append Expr to internal ComboBox list
+   StringReplace Expr, Expr, `;, `n, All
+   StringGetPos Last, Expr, `n, R1
+   StringLeft Pre, Expr, Last
+   StringTrimLeft Expr, Expr, Last+1
+   FileDelete %file%             ; delete old temporary file -> write new
+   FileAppend #NoTrayIcon`nFileDelete %file%`n%pre%`nFileAppend `% (%Expr%)+0`, %file%, %file%
+   RunWait %A_AhkPath% %file%    ; run AHK to execute temp script, evaluate expression
+   FileRead Result, %file%       ; get result
+   FileDelete %file%
+   GuiControl,,Expr,%Result%     ; append Result to internal ComboBox list
+   N += 2                        ; count lines
+   GuiControl Choose,Expr,%N%    ; show Result
 Return
