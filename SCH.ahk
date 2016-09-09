@@ -22,6 +22,7 @@ if (not FileExist("img")) {
   FileCreateDir, img
   FileSetAttrib, +H, img
 }
+FileInstall, CalcFuns.ahk, %A_Temp%\CalcFuns.ahk, 1
 FileInstall, img\add.png, img\add.png, 1
 FileInstall, img\add2.png, img\add2.png, 1
 FileInstall, img\refresh.png, img\refresh.png, 1
@@ -428,7 +429,7 @@ Return
     Ctrl + ? - This help screen
   )  
 
-  h := 330
+  h := 360
   w := 500
   titleh := 40
   colh := h - titleh
@@ -482,6 +483,7 @@ Return
   Gui, Font, w700
   Gui, Add, Text, xs, Other
   Gui, Font, w100
+  Gui, Add, Text, xs, Ctrl+Shift+Alt + 3 - Calculator
   Gui, Add, Text, xs, Ctrl + ? - This help screen
 
   ;Gui, Add, Text, x10 y%titleh% w%colw% h%colh% , %help_col1%
@@ -558,7 +560,7 @@ ButtonOK:
    StringLeft Pre, Expr, Last
    StringTrimLeft Expr, Expr, Last+1
    FileDelete %file%             ; delete old temporary file -> write new
-   FileAppend #NoTrayIcon`nFileDelete %file%`n%pre%`nFileAppend `% (%Expr%)+0`, %file%, %file%
+   FileAppend #NoTrayIcon`n#Include %A_Temp%\CalcFuns.ahk`nFileDelete %file%`n%pre%`nFileAppend `% (%Expr%)+0`, %file%, %file%
    RunWait %A_AhkPath% %file%    ; run AHK to execute temp script, evaluate expression
    FileRead Result, %file%       ; get result
    FileDelete %file%
