@@ -478,7 +478,7 @@ Return
   Gui, Add, Text, xs, Other
   Gui, Font, w100
   Gui, Add, Text, xs, Ctrl + ? - This help screen
-  
+
   if (CalcEnabled) {
     Gui, Add, Text, xs, # - Calculator (or Ctrl+Shift+Alt + 3)
     h := h + 20
