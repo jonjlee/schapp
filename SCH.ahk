@@ -1,22 +1,58 @@
+; Test function - Ctrl+Shift+Alt+T
+;^!+t::
+;Return
+
 ; ---------------------------------------------------------
-; Splash screen and setup
+; Configuration
 ; ---------------------------------------------------------
-splash_h := 100
+SetTitleMatchMode 2
+AHKExe := (A_AHKPath <> "") ? A_AHKPath : "O:\AutoHotKey.exe"
+CalcEnabled := FileExist(AHKexe)
+
+; ---------------------------------------------------------
+; UI setup
+; ---------------------------------------------------------
+; Splash screen
 splash_w := 400
 splash_x := A_ScreenWidth - splash_w - 25
-splash_y := A_ScreenHeight - splash_h - 25
+splash_y := A_ScreenHeight - 100
 Gui, Font, s14
 Gui, Add, Text, x0 y10 w%splash_w% center, CIS shortcuts enabled. Ctrl+? for help.
 Gui, -Caption +alwaysontop +Toolwindow +Border
 Gui, Show, x%splash_x% y%splash_y% w%splash_w% NoActivate,
 Sleep 100
 Loop {
-  If (A_TimeIdlePhysical < 100 or A_TimeIdlePhysical > 2000) {
+  If (A_TimeIdlePhysical < 100 or A_TimeIdlePhysical > 2500) {
     break
   }
 }
 Gui, Destroy
 
+; Calculator window -  combobox to type in and OK button (activated by enter)
+CalcFunctions =
+( LTRIM
+Special Formulas:
+Maint IVF rate: mivf(weight in kg)
+kCal/kg/day: kcal(mL in last 24h, kCal of formula, weight in kg)
+)
+CalcY := 50
+CalcWidth := 350
+Gui, Calc:Font, s7
+Gui, Calc:Add, Text, X5 Y5 W%CalcWidth%, %CalcFunctions%
+Gui, Calc:Font, s12
+Gui, Calc:Add, ComboBox, X-2 Y%CalcY% W%CalcWidth% vCalcExpr
+Gui, Calc:Add, Button, Default, OK
+Gui, Calc:-Caption +Border
+ShowCalculator() {
+  global CalcY, CalcWidth
+  CalcWinH := CalcY + 24
+  CalcWinWidth := CalcWidth - 23
+  Gui, Calc:Show, H%CalcWinH% W%CalcWinWidth%
+}
+
+; ---------------------------------------------------------
+; Install script
+; ---------------------------------------------------------
 ; Create hidden directory and install images
 if (not FileExist("img")) {
   FileCreateDir, img
@@ -39,10 +75,6 @@ FileInstall, img\ordersall.png, img\ordersall.png, 1
 FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\checked.PNG, img\checked.PNG, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
-
-; Test function - Ctrl+Shift+Alt+T
-;^!+t::
-;Return
 
 ; ---------------------------------------------------------
 ; Helpers
@@ -323,10 +355,8 @@ ClickGraph() {
 ; -----------------------------------------------------------------------------
 ; Shortcut keys
 ; -----------------------------------------------------------------------------
-
 ; CIS / FirstNet shortcuts - only trigger when active window's title matches 
-SetTitleMatchMode 2
-#If WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet")
+#If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet"))
 
 ; Main tasks
 ^!+n::ShowNotes()
@@ -382,7 +412,7 @@ SetTitleMatchMode 2
 Return
 
 ; --------------------------------------------------------------------------------
-; Global shortcuts below this point - not restricted to certain active windows
+; Global shortcut keys (not restricted to certain active windows)
 ; --------------------------------------------------------------------------------
 #If
 
@@ -391,56 +421,20 @@ Return
   Run, C:\Windows\System32\Disconnect.exe
 Return
 
-; -------------------------------------------------
 ; Help screen
-; -------------------------------------------------
 ^?::
 ^/::
-  help_title =
-  ( LTrim
-    Type a letter to trigger the associated action:
-  )
-  help_col1 = 
-  ( LTrim
-    C - CORES  (or Ctrl+Shift+Alt + C)
-    P - Patient List  (or Ctrl+Shift+Alt + P)
-    O - Orders  (or Ctrl+Shift+Alt + O)
-    V - Vitals  (or Ctrl+Shift+Alt + V)
-    L - Labs  (or Ctrl+Shift+Alt + L)
-    N - Notes  (or Ctrl+Shift+Alt + N)
-    M - Documents  (or Ctrl+Shift+Alt + M)
-
-    R - Refresh  (or Ctrl+Shift + R)
-    W - Close Chart  (or Ctrl+Shift + W)
-  )  
-  help_col2 = 
-  ( LTrim
-    * - Check boxes (vitals)  (or Ctrl+K then *)
-    8 - Unheck boxes (vitals)  (or Ctrl+K then 8)
-
-    D - Add Order or Note  (or Ctrl+K then D)
-    A - All Orders  (or Ctrl+K then A)
-    S - Active Orders  (or Ctrl+K then S)
-
-    N - Next clipboard  (or Ctrl+K then N)
-    R - Mark clipboard read  (or Ctrl+K then R)
-    ! - Clear all clipboards  (or Ctrl+K then !)
-
-    Ctrl + ? - This help screen
-  )  
-
-  h := 360
+  ; Window size and location
+  h := 320
   w := 500
   titleh := 40
-  colh := h - titleh
-  colw := w/2 - 10
   col2x := w/2 - 10
   x := (A_ScreenWidth - w - 2)
   y := (A_ScreenHeight - h - 2)
 
+  ; Build window text
   Gui, Font, s11
-  Gui, Add, Text, x0 y10 w%w% h%titleh% center, %help_title%
-
+  Gui, Add, Text, x0 y10 w%w% h%titleh% center, Type a letter to trigger the associated action:
   Gui, Font, s9
 
   Gui, Font, w700
@@ -450,7 +444,7 @@ Return
   Gui, Add, Text, xs, W - Close Chart  (or Ctrl+Shift + W)
 
   Gui, Font, w700
-  Gui, Add, Text, xs, Patient Areas
+  Gui, Add, Text, xs, Patient Screens
   Gui, Font, w100
   Gui, Add, Text, xs, C - CORES  (or Ctrl+Shift+Alt + C)
   Gui, Add, Text, xs, P - Patient List  (or Ctrl+Shift+Alt + P)
@@ -463,8 +457,8 @@ Return
   Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
   Gui, Font, w100
-  Gui, Add, Text, xs, * - Check boxes (vitals)  (or Ctrl+K then *)
-  Gui, Add, Text, xs, 8 - Unheck boxes (vitals)  (or Ctrl+K then 8)
+  Gui, Add, Text, xs, * - Check all boxes  (or Ctrl+K then *)
+  Gui, Add, Text, xs, 8 - Unheck all boxes  (or Ctrl+K then 8)
 
   Gui, Font, w700
   Gui, Add, Text, xs, Orders
@@ -477,24 +471,23 @@ Return
   Gui, Add, Text, xs, Clipboards
   Gui, Font, w100
   Gui, Add, Text, xs, N - Next clipboard  (or Ctrl+K then N)
-  Gui, Add, Text, xs, R - Mark clipboard read  (or Ctrl+K then R)
+  Gui, Add, Text, xs, R - Mark flowsheet read  (or Ctrl+K then R)
   Gui, Add, Text, xs, ! - Clear all clipboards  (or Ctrl+K then !)
 
   Gui, Font, w700
   Gui, Add, Text, xs, Other
   Gui, Font, w100
-  Gui, Add, Text, xs, Ctrl+Shift+Alt + 3 - Calculator
   Gui, Add, Text, xs, Ctrl + ? - This help screen
+  
+  if (CalcEnabled) {
+    Gui, Add, Text, xs, # - Calculator (or Ctrl+Shift+Alt + 3)
+    h := h + 20
+    y := y - 20
+  }
 
-  ;Gui, Add, Text, x10 y%titleh% w%colw% h%colh% , %help_col1%
-  ;Gui, Add, Text, x%col2x% y%titleh% w%colw% h%colh% , %help_col2%
-
+  ; Show window and wait for a key
   Gui, -Caption +AlwaysOntop +Toolwindow +Border
-  ;Gui, Color, 808080
-  
   Gui, Show, x%x% y%y% h%h% w%w% NoActivate, CIS Shortcut Key
-  
-
   Input, key, I L1
   Gui, Destroy
 
@@ -535,36 +528,43 @@ Return
     CheckAllCheckboxes()
   } else if (key = "8") {
     CheckAllCheckboxes(false)
+  } else if (key = "#" and CalcEnabled) {
+    ShowCalculator()
   }
 Return
 
 ; ---------------------------------------------------
 ; Calculator
 ; ---------------------------------------------------
+; Enable calculator GUI only if AutoHotKey.exe is available
+#If CalcEnabled
 ^!+3::
-  file = %A_Temp%\docalc.ahk             ; any unused filename
-  Gui, Font, s12
-  Gui Add, ComboBox, X0 Y0 W300 vExpr
-  Gui Add, Button, Default, OK     ; button activated by Enter, Gui Show cuts it off
-  Gui -Caption +Border             ; small window w/o title bar
-  Gui Show, H24 W277              ; cut off unnecessary parts
+  ; show, but cut off combobox dropdown & ok button
+  ShowCalculator()
 Return
-GuiEscape:
-   Gui, Destroy
+CalcGuiEscape:
+  Gui, Calc:Show, Hide
 Return
-ButtonOK:
-   GuiControlGet Expr,,Expr      ; get Expr from ComboBox
-   GuiControl,,Expr,%Expr%       ; append Expr to internal ComboBox list
-   StringReplace Expr, Expr, `;, `n, All
-   StringGetPos Last, Expr, `n, R1
-   StringLeft Pre, Expr, Last
-   StringTrimLeft Expr, Expr, Last+1
-   FileDelete %file%             ; delete old temporary file -> write new
-   FileAppend #NoTrayIcon`n#Include %A_Temp%\CalcFuns.ahk`nFileDelete %file%`n%pre%`nFileAppend `% (%Expr%)+0`, %file%, %file%
-   RunWait %A_AhkPath% %file%    ; run AHK to execute temp script, evaluate expression
-   FileRead Result, %file%       ; get result
-   FileDelete %file%
-   GuiControl,,Expr,%Result%     ; append Result to internal ComboBox list
-   N += 2                        ; count lines
-   GuiControl Choose,Expr,%N%    ; show Result
+CalcButtonOK:
+  ; get CalcExpr from ComboBox, then append to dropdown
+  GuiControlGet CalcExpr, , CalcExpr                  
+  GuiControl, , CalcExpr, %CalcExpr%
+  
+  ; Convert ; to newlines
+  StringReplace CalcExpr, CalcExpr, `;, `n, All
+  StringGetPos Last, CalcExpr, `n, R1
+  StringLeft Pre, CalcExpr, Last
+  StringTrimLeft CalcExpr, CalcExpr, Last+1
+
+  ; run AHK to execute temp script, evaluate expression
+  calcFile = %A_Temp%\docalc.ahk
+  resFile = %A_Temp%\docalc.res
+  FileDelete %calcFile%
+  FileAppend #NoTrayIcon`n#Include %A_Temp%\CalcFuns.ahk`nFileDelete %resFile%`n%pre%`nFileAppend `% (%CalcExpr%)`, %resFile%`n, %calcFile%
+  RunWait %AHKExe% %calcFile%
+
+  ; get result and show
+  FileRead Result, %resFile%
+  GuiControl, Text, CalcExpr, %Result%
 Return
+#If

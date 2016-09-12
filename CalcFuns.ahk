@@ -11,12 +11,12 @@ mivf(kg)
   } else if (kg <= 20) {
     return (1000 + 50 * (kg-10)) / 24
   } else {
-    daily = (1500 + 20 * (kg-20))
-    daily = daily > 2400 ? 2400 : daily
+    daily := (1500 + 20 * (kg-20))
+    daily := daily > 2400 ? 2400 : daily
     return daily / 24
   }
 }
-kcal(cclast24hours,formulakcal,weight)
+kcal(cclast24hours,formulakcal,weightkg)
 {
-  return cclast24hours / weight * formulakcal / 30
+  return cclast24hours / weightkg * formulakcal / 30
 }
