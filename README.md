@@ -1,2 +1,5 @@
 # SCH App
-Small tools to work more efficientlywith the SCH EHR system.
+Tools to work more efficiently with the SCH EHR system. Currently, this includes
+
+* Shortcut keys for common actions in CIS
+* Calculator
