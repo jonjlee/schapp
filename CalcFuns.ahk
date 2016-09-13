@@ -31,3 +31,6 @@ kg(kg) {
 lbs(lbs) {
   return lbs . " lbs = " . (lbs / 2.2046) . " kg"
 }
+t(deg) {
+  return deg . "C=" . Round((deg * 1.8) + 32, 1) . "F and " . deg . "F=" . Round((deg - 32) / 1.8, 1) . "C"
+}

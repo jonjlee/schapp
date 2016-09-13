@@ -35,10 +35,11 @@ mivf(weight in kg) - maintenance IVF rate
 kcal(mL in last 24h, kCal of formula, weight in kg) - kCal/kg/day
 lbs(lbs) - lbs to kg
 kg(kg) - kg to lbs
+t(temp) - convert C/F
 Up/Down and Alt+Up/Down - previous calculations
 )
 CalcHistory := []
-CalcY := 75
+CalcY := 85
 CalcWidth := 350
 Gui, Calc:Font, s7
 Gui, Calc:Add, Text, X5 Y5 W%CalcWidth%, %CalcFunctions%
@@ -137,8 +138,8 @@ ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:
   }
   return Arr
 }
-ImageClick(image, n:=1, orientation:="Vertical") {
-  ImageSearchAll(images, image, orientation, n)
+ImageClick(image, n:=1, orientation:="Vertical", minX:=0, minY:=0) {
+  ImageSearchAll(images, image, orientation, n, minX, minY)
   if (images.MaxIndex() >= n) {
     MouseClick, , % images[n][1], % images[n][2]
     return true   
@@ -224,6 +225,27 @@ ShowLabs() {
   MouseClick, , 190, 140
   MouseMove, %X%, %Y%
 }
+ShowIView() {
+  ; IView and I&O
+  MouseGetPos X, Y
+  MouseClick, , 190, 40
+  MouseClick, , 190, 410
+  MouseMove, %X%, %Y%
+}
+ShowMAR() {
+  ; MAR Summary via menu
+  MouseGetPos X, Y
+  MouseClick, , 190, 40
+  MouseClick, , 190, 455
+  MouseMove, %X%, %Y%
+}
+ShowPatientSummary() {
+  ; Patient Summary via menu
+  MouseGetPos X, Y
+  MouseClick, , 190, 40
+  MouseClick, , 190, 55
+  MouseMove, %X%, %Y%
+}
 ShowPatientList() {
   ; Patient List via menu
   MouseGetPos X, Y
@@ -243,9 +265,14 @@ ShowCores() {
 ; Common secondary tasks - Ctrl+Shift+letter
 ; -----------------------------------------------------------------------------
 CloseChart() {
-  ; Close chart via x button
   MouseGetPos X, Y
-  ImageClick("*100 " . A_ScriptDir . "\img\close.png")
+  if (WinActive("Flowsheet") or WinActive("Document Viewer")) {
+    ; Close flowsheet via exit button
+    ImageClick("exit.png")
+  } else {
+    ; Close chart via x button
+    ImageClick("*100 " . A_ScriptDir . "\img\close.png")
+  }
   MouseMove, %X%, %Y%
 }
 Refresh() {
@@ -371,14 +398,17 @@ ClickGraph() {
 ; Shortcut keys
 ; -----------------------------------------------------------------------------
 ; CIS / FirstNet shortcuts - only trigger when active window's title matches 
-#If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet"))
+#If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet") or WinActive("Document Viewer"))
 
 ; Main tasks
 ^!+n::ShowNotes()
-^!+m::ShowDocuments()
+^!+u::ShowDocuments()
 ^!+o::ShowOrders()
 ^!+v::ShowVitals()
 ^!+l::ShowLabs()
+^!+i::ShowIView()
+^!+m::ShowMAR()
+^!+s::ShowPatientSummary()
 ^!+p::ShowPatientList()
 ^!+c::ShowCores()
 
@@ -467,7 +497,11 @@ Return
   Gui, Add, Text, xs, V - Vitals  (or Ctrl+Shift+Alt + V)
   Gui, Add, Text, xs, L - Labs  (or Ctrl+Shift+Alt + L)
   Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
-  Gui, Add, Text, xs, M - Documents  (or Ctrl+Shift+Alt + M)
+  Gui, Add, Text, xs, I - I/Os  (or Ctrl+Shift+Alt + I)
+  Gui, Add, Text, xs, M - MAR Summary  (or Ctrl+Shift+Alt + M)
+
+  Gui, Add, Text, xs, --- Patient Summary  (use Ctrl+Shift+Alt + S)
+  Gui, Add, Text, xs, --- Documents  (use Ctrl+Shift+Alt + U)
 
   Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
@@ -517,6 +551,12 @@ Return
     ShowVitals()
   } else if (key = "l") {
     ShowLabs()
+  } else if (key = "u") {
+    ShowDocuments()
+  } else if (key = "i") {
+    ShowIView()
+  } else if (key = "m") {
+    ShowMAR()
   } else if (key = "p") {
     ShowPatientList()
   } else if (key = "c") {
