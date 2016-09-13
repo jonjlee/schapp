@@ -4,19 +4,30 @@ bmi(weightkg, heightmeters)
 }
 mivf(kg)
 {
+  rate = ""
   if (kg < 3.5) {
-    return 4 * kg
+    rate := 4 * kg
   } else if (kg <= 10) {
-    return (100 * kg) / 24
+    rate := (100 * kg) / 24
   } else if (kg <= 20) {
-    return (1000 + 50 * (kg-10)) / 24
+    rate := (1000 + 50 * (kg-10)) / 24
   } else {
     daily := (1500 + 20 * (kg-20))
     daily := daily > 2400 ? 2400 : daily
-    return daily / 24
+    rate := daily / 24
   }
+  return rate . " mL/hr"
 }
 kcal(cclast24hours,formulakcal,weightkg)
 {
-  return cclast24hours / weightkg * formulakcal / 30
+  return (cclast24hours / weightkg * formulakcal / 30) . " mL/kg/d"
+}
+kg(kg) {
+  lbsDecimal := kg * 2.2046
+  lbs := Floor(lbsDecimal)
+  oz := Round((lbsDecimal - lbs) * 16, 1)
+  return kg . " kg = " . lbs . "lb " . oz . "oz"
+}
+lbs(lbs) {
+  return lbs . " lbs = " . (lbs / 2.2046) . " kg"
 }

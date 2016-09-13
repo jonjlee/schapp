@@ -31,11 +31,14 @@ Gui, Destroy
 ; Calculator window -  combobox to type in and OK button (activated by enter)
 CalcFunctions =
 ( LTRIM
-Special Formulas:
-Maint IVF rate: mivf(weight in kg)
-kCal/kg/day: kcal(mL in last 24h, kCal of formula, weight in kg)
+mivf(weight in kg) - maintenance IVF rate
+kcal(mL in last 24h, kCal of formula, weight in kg) - kCal/kg/day
+lbs(lbs) - lbs to kg
+kg(kg) - kg to lbs
+Up/Down and Alt+Up/Down - previous calculations
 )
-CalcY := 50
+CalcHistory := []
+CalcY := 75
 CalcWidth := 350
 Gui, Calc:Font, s7
 Gui, Calc:Add, Text, X5 Y5 W%CalcWidth%, %CalcFunctions%
@@ -91,6 +94,18 @@ Shake()
 Log(event) {
   FormatTime, T, , yyyy-MM-dd HH:mm:ss
   FileAppend, %T% %A_UserName% %event%`n, %A_Temp%\ahklog.txt
+}
+Join(arr, sep:=",") {
+  ret := ""
+  if (arr.MaxIndex() > 0) {
+    for i, el in arr {
+      if (i > 1) {
+        ret := ret . sep
+      }
+      ret := ret . el
+    }
+  }
+  return ret
 }
 ImagePath(image) {
   return "*20 " . A_ScriptDir . "\img\" . image
@@ -546,9 +561,15 @@ CalcGuiEscape:
   Gui, Calc:Show, Hide
 Return
 CalcButtonOK:
-  ; get CalcExpr from ComboBox, then append to dropdown
+  ; get text from ComboBox named CalcExpr into a variable named CalcExpr
   GuiControlGet CalcExpr, , CalcExpr                  
-  GuiControl, , CalcExpr, %CalcExpr%
+
+  ; Keep up to 20 items of history, and set combo box list contents
+  CalcHistory.push(CalcExpr)
+  if (CalcHistory.Length() > 20) {
+    CalcHistory.RemoveAt(0)
+  }
+  GuiControl, , CalcExpr, % "|" . Join(CalcHistory,"|")
   
   ; Convert ; to newlines
   StringReplace CalcExpr, CalcExpr, `;, `n, All
