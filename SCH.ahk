@@ -79,6 +79,8 @@ FileInstall, img\ordersall.png, img\ordersall.png, 1
 FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\checked.PNG, img\checked.PNG, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
+FileInstall, img\coresexit.png, img\coresexit.png, 1
+FileInstall, img\coressave.png, img\coressave.png, 1
 
 ; ---------------------------------------------------------
 ; Helpers
@@ -269,6 +271,9 @@ CloseChart() {
   if (WinActive("Flowsheet") or WinActive("Document Viewer")) {
     ; Close flowsheet via exit button
     ImageClick("exit.png")
+  } else if (WinActive("CORES")) {
+    ; Close CORES via Save & Exit button
+    ImageClick("coresexit.png")
   } else {
     ; Close chart via x button
     ImageClick("*100 " . A_ScriptDir . "\img\close.png")
@@ -393,6 +398,13 @@ ClickGraph() {
     Shake()
   }
 }
+SaveCORES() {
+  MouseGetPos X, Y
+  if (not ImageClick("coressave.png")) {
+    Shake()
+  }
+  MouseMove, %X%, %Y%
+}
 
 ; -----------------------------------------------------------------------------
 ; Shortcut keys
@@ -455,6 +467,10 @@ ClickGraph() {
 
   MouseMove, %X%, %Y%
 Return
+
+; CORES popup window only shortcuts
+#If WinActive("CORES")
+^s::SaveCORES()
 
 ; --------------------------------------------------------------------------------
 ; Global shortcut keys (not restricted to certain active windows)
