@@ -33,9 +33,8 @@ CalcFunctions =
 ( LTRIM
 mivf(weight in kg) - maintenance IVF rate
 kcal(mL in last 24h, kCal of formula, weight in kg) - kCal/kg/day
-lbs(lbs) - lbs to kg
-kg(kg) - kg to lbs
-t(temp) - convert C/F
+w(weight) - convert lbs / kg
+t(temp) - convert C / F
 Up/Down and Alt+Up/Down - previous calculations
 )
 CalcHistory := []
@@ -81,6 +80,8 @@ FileInstall, img\checked.PNG, img\checked.PNG, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
 FileInstall, img\coresexit.png, img\coresexit.png, 1
 FileInstall, img\coressave.png, img\coressave.png, 1
+FileInstall, img\check.png, img\check.png, 1
+FileInstall, img\firstneticon.png, img\firstneticon.png, 1
 
 ; ---------------------------------------------------------
 ; Helpers
@@ -138,7 +139,7 @@ ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:
       lastY := Y+2
     }
   }
-  return Arr
+  return (Arr.length() > 0)
 }
 ImageClick(image, n:=1, orientation:="Vertical", minX:=0, minY:=0) {
   ImageSearchAll(images, image, orientation, n, minX, minY)
@@ -251,8 +252,13 @@ ShowPatientSummary() {
 ShowPatientList() {
   ; Patient List via menu
   MouseGetPos X, Y
-  MouseClick, , 350, 60
-  MouseClick, , 250, 900
+  if (WinActive("FirstNet") or (WinActive("Opened by") and ImageSearchAll(_, "firstneticon.png"))) {
+    MouseClick, , 100, 40
+    MouseClick, , 100, 55
+  } else {
+    MouseClick, , 350, 60
+    MouseClick, , 250, 900
+  }
   MouseMove, %X%, %Y%
 }
 ShowCores() {
@@ -274,6 +280,9 @@ CloseChart() {
   } else if (WinActive("CORES")) {
     ; Close CORES via Save & Exit button
     ImageClick("coresexit.png")
+  } else if (WinActive("Medication Reconciliation")) {
+    ; Close forms with check mark
+    ImageClick("check.png")
   } else {
     ; Close chart via x button
     ImageClick("*100 " . A_ScriptDir . "\img\close.png")
@@ -409,8 +418,38 @@ SaveCORES() {
 ; -----------------------------------------------------------------------------
 ; Shortcut keys
 ; -----------------------------------------------------------------------------
+HandleSecondaryKey(key) {
+  MouseGetPos X, Y
+
+  if (key = "a") {
+    ShowAllOrders() 
+  } else if (key = "d") {
+    ClickAdd()
+  } else if (key = "g") {
+    ClickGraph()
+  } else if (key = "s") {
+    ShowActiveOrders()
+  } else if (key = "n") {
+    OpenNextClipboard()
+  } else if (key = "r") {
+    MarkClipboardRead()
+  } else if (key = "!") {
+    MarkAllClipboardsRead()
+  } else if (key = "*") {
+    CheckAllCheckboxes()
+  } else if (key = "8") {
+    CheckAllCheckboxes(false)
+  } else if (key = " ") {
+    Click
+  } else {
+    Shake()   ; unrecognized
+  }
+
+  MouseMove, %X%, %Y%
+}
+
 ; CIS / FirstNet shortcuts - only trigger when active window's title matches 
-#If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet") or WinActive("Document Viewer"))
+#If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet") or WinActive("Document Viewer") or WinActive("Diagnosis List") or WinActive("Medication Reconciliation"))
 
 ; Main tasks
 ^!+n::ShowNotes()
@@ -439,33 +478,7 @@ SaveCORES() {
     Return
   }
 
-  MouseGetPos X, Y
-
-  if (key = "a") {
-    ShowAllOrders() 
-  } else if (key = "d") {
-    ClickAdd()
-  } else if (key = "g") {
-    ClickGraph()
-  } else if (key = "s") {
-    ShowActiveOrders()
-  } else if (key = "n") {
-    OpenNextClipboard()
-  } else if (key = "r") {
-    MarkClipboardRead()
-  } else if (key = "!") {
-    MarkAllClipboardsRead()
-  } else if (key = "*") {
-    CheckAllCheckboxes()
-  } else if (key = "8") {
-    CheckAllCheckboxes(false)
-  } else if (key = " ") {
-    Click
-  } else {
-    Shake()   ; unrecognized
-  }
-
-  MouseMove, %X%, %Y%
+  HandleSecondaryKey(key)
 Return
 
 ; CORES popup window only shortcuts
@@ -581,26 +594,10 @@ Return
     CloseChart()
   } else if (key = "r" and not WinActive("Flowsheet")) {
     Refresh()
-  } else if (key = "a") {
-    ShowAllOrders() 
-  } else if (key = "d") {
-    ClickAdd()
-  } else if (key = "g") {
-    ClickGraph()
-  } else if (key = "s") {
-    ShowActiveOrders()
-  } else if (key = "n") {
-    OpenNextClipboard()
-  } else if (key = "r" and WinActive("Flowsheet")) {
-    MarkClipboardRead()
-  } else if (key = "!") {
-    MarkAllClipboardsRead()
-  } else if (key = "*") {
-    CheckAllCheckboxes()
-  } else if (key = "8") {
-    CheckAllCheckboxes(false)
   } else if (key = "#" and CalcEnabled) {
     ShowCalculator()
+  } else {
+    HandleSecondaryKey(key)
   }
 Return
 
