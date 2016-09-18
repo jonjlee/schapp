@@ -22,14 +22,12 @@ kcal(cclast24hours,formulakcal,weightkg)
 {
   return (cclast24hours / weightkg * formulakcal / 30) . " mL/kg/d"
 }
-kg(kg) {
-  lbsDecimal := kg * 2.2046
+w(weight) {
+  kg := Round(weight / 2.2046, 3)
+  lbsDecimal := weight * 2.2046
   lbs := Floor(lbsDecimal)
   oz := Round((lbsDecimal - lbs) * 16, 1)
-  return kg . " kg = " . lbs . "lb " . oz . "oz"
-}
-lbs(lbs) {
-  return lbs . " lbs = " . (lbs / 2.2046) . " kg"
+  return weight . "kg = " . lbs . "lb " . oz . "oz and " . weight . "lb = " . kg . "kg"
 }
 t(deg) {
   return deg . "C=" . Round((deg * 1.8) + 32, 1) . "F and " . deg . "F=" . Round((deg - 32) / 1.8, 1) . "C"
