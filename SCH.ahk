@@ -280,12 +280,12 @@ CloseChart() {
   } else if (WinActive("CORES")) {
     ; Close CORES via Save & Exit button
     ImageClick("coresexit.png")
-  } else if (WinActive("Medication Reconciliation")) {
-    ; Close forms with check mark
-    ImageClick("check.png")
   } else {
-    ; Close chart via x button
-    ImageClick("*100 " . A_ScriptDir . "\img\close.png")
+    ; Try to close any active form by clicking a check mark
+    if (not ImageClick("check.png")) {
+      ; Otherwise, close chart via x button
+      ImageClick("*100 " . A_ScriptDir . "\img\close.png")
+    }
   }
   MouseMove, %X%, %Y%
 }
@@ -449,7 +449,7 @@ HandleSecondaryKey(key) {
 }
 
 ; CIS / FirstNet shortcuts - only trigger when active window's title matches 
-#If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet") or WinActive("Document Viewer") or WinActive("Diagnosis List") or WinActive("Medication Reconciliation"))
+#If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet") or WinActive("Document Viewer") or WinActive("Diagnosis List") or WinActive("Medication Reconciliation") or WinActive("Summary of Visit") or WinActive("ED Callback"))
 
 ; Main tasks
 ^!+n::ShowNotes()
