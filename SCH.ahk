@@ -82,6 +82,7 @@ FileInstall, img\coresexit.png, img\coresexit.png, 1
 FileInstall, img\coressave.png, img\coressave.png, 1
 FileInstall, img\check.png, img\check.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
+FileInstall, img\arrow-activeline.png img\arrow-activeline.png, 1
 
 ; ---------------------------------------------------------
 ; Helpers
@@ -191,13 +192,13 @@ CursorNotBusyWait(sec:=5) {
 ShowNotes() {
   ; Notes via menu
   MouseClick, , 190, 40
-  MouseClick, , 190, 340
+  MouseClick, , 190, 235
   MouseMove, 250, 360
 }
 ShowDocuments() {
   ; Documents via menu
   MouseClick, , 190, 40
-  MouseClick, , 190, 325
+  MouseClick, , 190, 210
   MouseMove, 240, 290
 }
 ShowOrders() {
@@ -214,7 +215,8 @@ ShowVitals() {
   ; Vitals via menu with default vitals (HR, BP, etc) to trend selected
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 120
+  MouseClick, , 190, 140
+  MouseClick, , 500, 265
   CursorNotBusyWait()
   ImageWait("vitalsigns.png")
   Sleep, 300
@@ -226,20 +228,21 @@ ShowLabs() {
   MouseGetPos X, Y
   MouseClick, , 190, 40
   MouseClick, , 190, 140
+  MouseClick, , 230, 265
   MouseMove, %X%, %Y%
 }
 ShowIView() {
   ; IView and I&O
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 410
+  MouseClick, , 190, 275
   MouseMove, %X%, %Y%
 }
 ShowMAR() {
   ; MAR Summary via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 455
+  MouseClick, , 190, 295
   MouseMove, %X%, %Y%
 }
 ShowPatientSummary() {
@@ -395,10 +398,15 @@ ShowActiveOrders() {
 }
 ClickAdd() {
   ; Add button on Orders and Notes tabs
-  if (not ImageClick("add.png")) {
-    if (not ImageClick("add2.png")) {
-      Shake()
-    }
+  if (ImageClick("add.png")) {
+    return
+  } else if (ImageClick("add2.png")) {
+    return
+  } else if (ImageSearchAll(images, "arrow-activeline.png", 1)) {
+    MouseClick, , 360, 40
+    MouseClick, , 360, 235
+  } else {
+    Shake()
   }
 }
 ClickGraph() {
