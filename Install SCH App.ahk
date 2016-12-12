@@ -1,14 +1,31 @@
-Progress, B W350 FM12 P55, , Downloading to your desktop
-Sleep, 800
+FileInstall, img\ahkicon.png, ahkicon.png, 1
+FileInstall, img\ahkiconsm.png, ahkiconsm.png, 1
 
-success := false
+Progress, B W350 FM12 P55, , Downloading to your desktop
+
 if (FileExist("O:\Desktop")) {
+  ; On VDI terminals, desktop is on O:\desktop
   FileInstall SCH.exe, O:\Desktop\SCH.exe
-  FileInstall AutoHotKey.exe, O:\AutoHotKey.exe
-  success := true
+} else {
+  ; On windows enterprise machines, use standard user desktop folder
+  FileInstall SCH.exe, %A_Desktop%\SCH.exe
 }
 
+; See if we were able to install it by looking for the AHK icon
+success := false
+WinMinimizeAll
+Sleep, 2000
+ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, *50 ahkicon.png
+successmed := (ErrorLevel = 0)
+ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, *50 ahkiconsm.png
+successsm := (ErrorLevel = 0)
+success := successmed or successsm
+WinMinimizeAllUndo
+Sleep, 200
+
 Progress, Off
+FileDelete, ahkicon.png
+FileDelete, ahkiconsm.png
 
 if (success) {
   MsgBox, 0, Install, The app SCH.exe was installed to your desktop. Run it from there!

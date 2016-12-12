@@ -6,7 +6,8 @@
 ; Configuration
 ; ---------------------------------------------------------
 SetTitleMatchMode 2
-AHKExe := (A_AHKPath <> "") ? A_AHKPath : "O:\AutoHotKey.exe"
+AHKExe := A_Temp . "\AutoHotKey.exe"
+FileInstall, AutoHotKey.exe, % AHKExe, 1
 CalcEnabled := FileExist(AHKexe)
 
 ; ---------------------------------------------------------
@@ -61,7 +62,6 @@ if (not FileExist("img")) {
   FileCreateDir, img
   FileSetAttrib, +H, img
 }
-FileInstall, CalcFuns.ahk, %A_Temp%\CalcFuns.ahk, 1
 FileInstall, img\add.png, img\add.png, 1
 FileInstall, img\add2.png, img\add2.png, 1
 FileInstall, img\refresh.png, img\refresh.png, 1
@@ -82,7 +82,10 @@ FileInstall, img\coresexit.png, img\coresexit.png, 1
 FileInstall, img\coressave.png, img\coressave.png, 1
 FileInstall, img\check.png, img\check.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
-FileInstall, img\arrow-activeline.png img\arrow-activeline.png, 1
+FileInstall, img\arrowright.png, img\arrowright.png, 1
+FileInstall, img\provideroverview.png, img\provideroverview.png, 1
+FileInstall, img\navigator.png, img\navigator.png, 1
+; Files for calculator installed in implementation below
 
 ; ---------------------------------------------------------
 ; Helpers
@@ -155,13 +158,13 @@ ImageWait(image, sec:=5) {
     image := ImagePath(image)
   }
 
-  n := sec * 1000 / 300
+  n := sec * 1000 / 100
   Loop %n% {
     ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, %image%
     if (ErrorLevel = 0) {
       return true
     }
-    Sleep, 300
+    Sleep, 100
   }
   return false
 }
@@ -205,29 +208,30 @@ ShowOrders() {
   ; Orders via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 95
+  MouseClick, , 190, 105
   MouseMove, %X%, %Y%
 
   ;MouseClick, , 730, 350   ; focus order list
   ;MouseMove, 240, 230	    ; hover over add button
 }
 ShowVitals() {
-  ; Vitals via menu with default vitals (HR, BP, etc) to trend selected
+  ; Flowsheets via menu > Provider Overview tab > Vitals Signs in left sided Navigator
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 140
-  MouseClick, , 500, 265
-  CursorNotBusyWait()
+  MouseClick, , 190, 150
+  MouseMove, %X%, %Y%
+  ImageWait("provideroverview.png")
+  MouseClick, , 520, 265
+  MouseMove, %X%, %Y%
   ImageWait("vitalsigns.png")
-  Sleep, 300
   ImageClick("vitalsigns.png")
   MouseMove, %X%, %Y%
 }
 ShowLabs() {
-  ; Labs via menu
+  ; Flowsheets via menu > Labs tab
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 140
+  MouseClick, , 190, 150
   MouseClick, , 230, 265
   MouseMove, %X%, %Y%
 }
@@ -235,21 +239,21 @@ ShowIView() {
   ; IView and I&O
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 275
+  MouseClick, , 190, 285
   MouseMove, %X%, %Y%
 }
 ShowMAR() {
   ; MAR Summary via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 295
+  MouseClick, , 190, 310
   MouseMove, %X%, %Y%
 }
 ShowPatientSummary() {
   ; Patient Summary via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 55
+  MouseClick, , 190, 65
   MouseMove, %X%, %Y%
 }
 ShowPatientList() {
@@ -260,7 +264,7 @@ ShowPatientList() {
     MouseClick, , 100, 55
   } else {
     MouseClick, , 350, 60
-    MouseClick, , 250, 900
+    MouseClick, , 250, 700
   }
   MouseMove, %X%, %Y%
 }
@@ -268,7 +272,7 @@ ShowCores() {
   ; CORES via menu
   MouseGetPos X, Y
   MouseClick, , 100, 40
-  MouseClick, , 100, 205
+  MouseClick, , 100, 220
   MouseMove, %X%, %Y%
 }  
 
@@ -372,7 +376,7 @@ CheckAllCheckboxes(check:=true) {
   }
 
   ; select all unchecked boxes on screen
-  ImageSearchAll(checkboxes, img, , , 230)
+  ImageSearchAll(checkboxes, img, , , 237)
   for i, checkbox in checkboxes {
     MouseClick, , % checkbox[1], % checkbox[2]
     if (A_TimeIdlePhysical < 100) {
@@ -402,7 +406,7 @@ ClickAdd() {
     return
   } else if (ImageClick("add2.png")) {
     return
-  } else if (ImageSearchAll(images, "arrow-activeline.png", 1)) {
+  } else if (ImageSearchAll(images, "arrowright.png", 1)) {
     MouseClick, , 360, 40
     MouseClick, , 360, 235
   } else {
@@ -622,6 +626,9 @@ CalcGuiEscape:
   Gui, Calc:Show, Hide
 Return
 CalcButtonOK:
+  FileInstall, AutoHotKey.exe, % AHKExe, 1
+  FileInstall, CalcFuns.ahk, %A_Temp%\CalcFuns.ahk, 1
+
   ; get text from ComboBox named CalcExpr into a variable named CalcExpr
   GuiControlGet CalcExpr, , CalcExpr                  
 
