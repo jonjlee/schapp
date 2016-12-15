@@ -84,7 +84,9 @@ FileInstall, img\check.png, img\check.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
 FileInstall, img\arrowright.png, img\arrowright.png, 1
 FileInstall, img\provideroverview.png, img\provideroverview.png, 1
+FileInstall, img\labs.png, img\labs.png, 1
 FileInstall, img\navigator.png, img\navigator.png, 1
+FileInstall, img\modify.png, img\modify.png, 1
 ; Files for calculator installed in implementation below
 
 ; ---------------------------------------------------------
@@ -115,8 +117,8 @@ Join(arr, sep:=",") {
   }
   return ret
 }
-ImagePath(image) {
-  return "*20 " . A_ScriptDir . "\img\" . image
+ImagePath(image, options:="*20") {
+  return options . " " . A_ScriptDir . "\img\" . image
 }
 ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0) {
   if (SubStr(image, 1, 1) <> "*") {
@@ -220,11 +222,9 @@ ShowVitals() {
   MouseClick, , 190, 40
   MouseClick, , 190, 150
   MouseMove, %X%, %Y%
-  ImageWait("provideroverview.png")
-  MouseClick, , 520, 265
-  MouseMove, %X%, %Y%
-  ImageWait("vitalsigns.png")
-  ImageClick("vitalsigns.png")
+  if (ImageWait(ImagePath("provideroverview.png", "*100"))) {
+    ImageClick("provideroverview.png")
+  }
   MouseMove, %X%, %Y%
 }
 ShowLabs() {
@@ -232,7 +232,10 @@ ShowLabs() {
   MouseGetPos X, Y
   MouseClick, , 190, 40
   MouseClick, , 190, 150
-  MouseClick, , 230, 265
+  MouseMove, %X%, %Y%
+  if (ImageWait(ImagePath("labs.png", "*100"))) {
+    ImageClick("labs.png")
+  }
   MouseMove, %X%, %Y%
 }
 ShowIView() {
@@ -286,12 +289,12 @@ CloseChart() {
     ImageClick("exit.png")
   } else if (WinActive("CORES")) {
     ; Close CORES via Save & Exit button
-    ImageClick("coresexit.png")
+    ImageClick(ImagePath("coresexit.png", "*100"))
   } else {
     ; Try to close any active form by clicking a check mark
     if (not ImageClick("check.png")) {
       ; Otherwise, close chart via x button
-      ImageClick("*100 " . A_ScriptDir . "\img\close.png")
+      ImageClick(ImagePath("close.png", "*100"))
     }
   }
   MouseMove, %X%, %Y%
@@ -395,7 +398,7 @@ ShowAllOrders() {
 ShowActiveOrders() {
   ; Click dropdown, wait for menu to show, then select Active Orders
   ImageClick("dropdown.png")
-  Sleep, 200
+  Sleep, 500
   if (not ImageClick("ordersactive.png")) {
     Shake()
   }
@@ -410,6 +413,12 @@ ClickAdd() {
     MouseClick, , 360, 40
     MouseClick, , 360, 235
   } else {
+    Shake()
+  }
+}
+ClickModify() {
+  ; Graph button
+  if (not ImageClick("modify.png")) {
     Shake()
   }
 }
@@ -437,6 +446,8 @@ HandleSecondaryKey(key) {
     ShowAllOrders() 
   } else if (key = "d") {
     ClickAdd()
+  } else if (key = "m") {
+    ClickModify()
   } else if (key = "g") {
     ClickGraph()
   } else if (key = "s") {
@@ -637,6 +648,14 @@ CalcButtonOK:
   if (CalcHistory.Length() > 20) {
     CalcHistory.RemoveAt(0)
   }
+
+  ; Convert fn: param1, param2 to fn("param1", "param2")
+  if (RegExMatch(CalcExpr, "^[a-zA-Z_]+\s*:")) {
+  	CalcExpr := RegExReplace(CalcExpr, "^([a-zA-Z_]+)\s*:\s*", "$1(""", "", 1)
+  	CalcExpr := RegExReplace(CalcExpr, "\s*,\s*", """,""")
+    CalcExpr := CalcExpr . """)"
+  }
+
   GuiControl, , CalcExpr, % "|" . Join(CalcHistory,"|")
   
   ; Convert ; to newlines
