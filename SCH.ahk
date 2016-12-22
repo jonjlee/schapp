@@ -32,11 +32,12 @@ Gui, Destroy
 ; Calculator window -  combobox to type in and OK button (activated by enter)
 CalcFunctions =
 ( LTRIM
-mivf(weight in kg) - maintenance IVF rate
-kcal(mL in last 24h, kCal of formula, weight in kg) - kCal/kg/day
-w(weight) - convert lbs / kg
-t(temp) - convert C / F
-Up/Down and Alt+Up/Down - previous calculations
+mivf: weight in kg - maintenance IVF rate
+kcal: mL in last 24h, kCal of formula, weight in kg - kCal/kg/day
+w: weight - convert lbs / kg
+t: temp - convert C / F
+
+Up/Down arrows - previous calculations
 )
 CalcHistory := []
 CalcY := 85
@@ -456,7 +457,7 @@ HandleSecondaryKey(key) {
     OpenNextClipboard()
   } else if (key = "r") {
     MarkClipboardRead()
-  } else if (key = "!") {
+  } else if (key = "!" or key = "1") {
     MarkAllClipboardsRead()
   } else if (key = "*") {
     CheckAllCheckboxes()
@@ -589,11 +590,13 @@ Return
   ; Show window and wait for a key
   Gui, -Caption +AlwaysOntop +Toolwindow +Border
   Gui, Show, x%x% y%y% h%h% w%w% NoActivate, CIS Shortcut Key
-  Input, key, I L1
+  Input, key, I L1 T5, {LControl}{RControl}
   Gui, Destroy
 
   ; Allow for shortcuts to be launched directly from the help screen
-  if (key = "n") {
+  if (key = "") {
+    Return
+  } else if (key = "n") {
     ShowNotes()
   } else if (key = "d") {
     ShowDocuments()

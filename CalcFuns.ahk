@@ -78,9 +78,37 @@ highDoseAmox(kg) {
   } else {
     dosing := 400/5
     dose := lo / 2
-    inQuarterMLs := Ceil(dose / dosing / 4) * 4
+    inQuarterMLs := Round(Ceil(dose / dosing * 4) / 4, 1)
     mg := round(dosing * inQuarterMLs)
     return mg . "mg (" . inQuarterMLs . "mL) BID (" . round(mg*2/kg) . "m/k/d - high dose amox 80-90 m/k/d divided BID)"
+  }
+}
+
+f(drug) {
+  SendInput, {Esc}
+  Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (1) /QLaunch "XenApp65:Firefox"
+  WinWaitActive, CHILD | Seattle Children, , 15
+  if (ErrorLevel = 0) {
+    Sleep, 500
+    SendInput, !d
+    Sleep, 500
+    SendInput, % "www.crlonline.com/lco/action/search?t=name&q=" . drug . "{Enter}"
+  }
+}
+
+pathway(name) {
+  SendInput, {Esc}
+  Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (1) /QLaunch "XenApp65:Firefox"
+  WinWaitActive, CHILD | Seattle Children, , 15
+  if (ErrorLevel = 0) {
+    Sleep, 500
+    SendInput, !d
+    Sleep, 500
+    SendInput, % "http://child.childrens.sea.kids/Policies_and_Standards/Clinical_Standard_Work_Pathways_and_Tools/" . drug . "{Enter}"
+    WinWaitActive, Clinical Standard, , 15
+    Sleep, 500
+    SendInput, ^f
+    SendInput, %name% {Esc}
   }
 }
 
