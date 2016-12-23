@@ -65,29 +65,29 @@ if (not FileExist("img")) {
 }
 FileInstall, img\add.png, img\add.png, 1
 FileInstall, img\add2.png, img\add2.png, 1
-FileInstall, img\refresh.png, img\refresh.png, 1
-FileInstall, img\primaryres.png, img\primaryres.png, 1
-FileInstall, img\vitalsigns.png, img\vitalsigns.png, 1
-FileInstall, img\clipboard.png, img\clipboard.png, 1
-FileInstall, img\exit.png, img\exit.png, 1
-FileInstall, img\graph.png, img\graph.png, 1
-FileInstall, img\seen.png, img\seen.png, 1
-FileInstall, img\add.png, img\add.png, 1
-FileInstall, img\dropdown.png, img\dropdown.png, 1
-FileInstall, img\close.png, img\close.png, 1
-FileInstall, img\ordersall.png, img\ordersall.png, 1
-FileInstall, img\ordersactive.png, img\ordersactive.png, 1
+FileInstall, img\arrowright.png, img\arrowright.png, 1
+FileInstall, img\check.png, img\check.png, 1
 FileInstall, img\checked.PNG, img\checked.PNG, 1
-FileInstall, img\unchecked.png, img\unchecked.png, 1
+FileInstall, img\clipboard.png, img\clipboard.png, 1
+FileInstall, img\close.png, img\close.png, 1
 FileInstall, img\coresexit.png, img\coresexit.png, 1
 FileInstall, img\coressave.png, img\coressave.png, 1
-FileInstall, img\check.png, img\check.png, 1
+FileInstall, img\discharge.png, img\discharge.png, 1
+FileInstall, img\dropdown.png, img\dropdown.png, 1
+FileInstall, img\exit.png, img\exit.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
-FileInstall, img\arrowright.png, img\arrowright.png, 1
-FileInstall, img\provideroverview.png, img\provideroverview.png, 1
+FileInstall, img\graph.png, img\graph.png, 1
 FileInstall, img\labs.png, img\labs.png, 1
-FileInstall, img\navigator.png, img\navigator.png, 1
 FileInstall, img\modify.png, img\modify.png, 1
+FileInstall, img\navigator.png, img\navigator.png, 1
+FileInstall, img\ordersactive.png, img\ordersactive.png, 1
+FileInstall, img\ordersall.png, img\ordersall.png, 1
+FileInstall, img\primaryres.png, img\primaryres.png, 1
+FileInstall, img\provideroverview.png, img\provideroverview.png, 1
+FileInstall, img\refresh.png, img\refresh.png, 1
+FileInstall, img\seen.png, img\seen.png, 1
+FileInstall, img\unchecked.png, img\unchecked.png, 1
+FileInstall, img\vitalsigns.png, img\vitalsigns.png, 1
 ; Files for calculator installed in implementation below
 
 ; ---------------------------------------------------------

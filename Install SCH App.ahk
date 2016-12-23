@@ -1,14 +1,30 @@
-Progress, B W350 FM12 P55, , Downloading to your desktop
+; src from http://sites.google.com/site/ahkref/custom-functions/invokeverb
+InvokeVerb(path, menu) {
+  objShell := ComObjCreate("Shell.Application")
+  if InStr(FileExist(path), "D") || InStr(path, "::{") {
+      objFolder := objShell.NameSpace(path)   
+      objFolderItem := objFolder.Self
+  } else {
+      SplitPath, path, name, dir
+      objFolder := objShell.NameSpace(dir)
+      objFolderItem := objFolder.ParseName(name)
+  }
+  objFolderItem.InvokeVerbEx(Menu)
+}
+
+Progress, B W350 FM12 P45, , Downloading to your desktop
 
 if (FileExist("O:\Desktop")) {
   ; On VDI terminals, desktop is on O:\desktop
-  FileInstall SCH.exe, O:\Desktop\SCH.exe
+  target = O:\Desktop\SCH.exe
 } else {
   ; On windows enterprise machines, use standard user desktop folder
-  FileInstall SCH.exe, %A_Desktop%\SCH.exe
+  target = %A_Desktop%\SCH.exe
 }
+FileInstall SCH.exe, % target
+Sleep, 1500
+InvokeVerb(target, "Pin to Taskbar")
 
-Sleep, 800
 Progress, Off
 
 success := true
