@@ -278,7 +278,16 @@ ShowCores() {
   MouseClick, , 100, 40
   MouseClick, , 100, 220
   MouseMove, %X%, %Y%
-}  
+}
+ShowDischarge() {
+  ; Discharge via Patient Actions menu
+  MouseGetPos X, Y
+  MouseClick, , 360, 40
+  if (ImageWait("discharge.png")) {
+    ImageClick("discharge.png")
+  }
+  MouseMove, %X%, %Y%
+}
 
 ; -----------------------------------------------------------------------------
 ; Common secondary tasks - Ctrl+Shift+letter
@@ -486,6 +495,7 @@ HandleSecondaryKey(key) {
 ^!+s::ShowPatientSummary()
 ^!+p::ShowPatientList()
 ^!+c::ShowCores()
+^!+d::ShowDischarge()
 
 ; Common secondary tasks - Ctrl+Shift+letter
 ^!+w::CloseChart()
