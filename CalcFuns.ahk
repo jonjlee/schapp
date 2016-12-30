@@ -86,30 +86,12 @@ highDoseAmox(kg) {
 
 f(drug) {
   SendInput, {Esc}
-  Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (1) /QLaunch "XenApp65:Firefox"
-  WinWaitActive, CHILD | Seattle Children, , 15
-  if (ErrorLevel = 0) {
-    Sleep, 500
-    SendInput, !d
-    Sleep, 500
-    SendInput, % "www.crlonline.com/lco/action/search?t=name&q=" . drug . "{Enter}"
-  }
+  bridge("open http://www.crlonline.com/lco/action/search?t=name&q=" . drug)
 }
 
 pathway(name) {
   SendInput, {Esc}
-  Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (1) /QLaunch "XenApp65:Firefox"
-  WinWaitActive, CHILD | Seattle Children, , 15
-  if (ErrorLevel = 0) {
-    Sleep, 500
-    SendInput, !d
-    Sleep, 500
-    SendInput, % "http://child.childrens.sea.kids/Policies_and_Standards/Clinical_Standard_Work_Pathways_and_Tools/" . drug . "{Enter}"
-    WinWaitActive, Clinical Standard, , 15
-    Sleep, 500
-    SendInput, ^f
-    SendInput, %name% {Esc}
-  }
+  bridge("open http://child.childrens.sea.kids/search.aspx?searchtext=csw%20pathway%20full%20list%20" . name)
 }
 
 ;	Modified from www.autohotkey.net/~polyethene/#dateparse
@@ -135,6 +117,11 @@ DateParse(str) {
     . t1 + (t1 = 12 ? t4 = "a" ? -12.0 : 0.0 : t4 = "p" and (t1 <= 12) ? 12.0 : 0.0) . t2 + 0.0 . t3 + 0.0
 	SetFormat, Float, %f%
 	Return, d
+}
+
+bridge(cmd) {
+  filedelete, o:\schbridge.txt
+  fileappend, % cmd, o:\schbridge.txt
 }
 
 ; Bilirubin lightable levels from bilitool.org 

@@ -13,6 +13,9 @@ CalcEnabled := FileExist(AHKexe)
 ; ---------------------------------------------------------
 ; UI setup
 ; ---------------------------------------------------------
+; Tray menu
+Menu, tray, add, Connect to internet, StartBridge
+
 ; Splash screen
 splash_w := 400
 splash_x := A_ScreenWidth - splash_w - 25
@@ -80,6 +83,7 @@ FileInstall, img\graph.png, img\graph.png, 1
 FileInstall, img\labs.png, img\labs.png, 1
 FileInstall, img\modify.png, img\modify.png, 1
 FileInstall, img\navigator.png, img\navigator.png, 1
+FileInstall, img\networkdrive.png, img\networkdrive.png, 1
 FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\ordersall.png, img\ordersall.png, 1
 FileInstall, img\primaryres.png, img\primaryres.png, 1
@@ -88,6 +92,7 @@ FileInstall, img\refresh.png, img\refresh.png, 1
 FileInstall, img\seen.png, img\seen.png, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
 FileInstall, img\vitalsigns.png, img\vitalsigns.png, 1
+FileInstall, img\winclose.png, img\winclose.png, 1
 ; Files for calculator installed in implementation below
 
 ; ---------------------------------------------------------
@@ -117,6 +122,8 @@ Join(arr, sep:=",") {
     }
   }
   return ret
+}
+MouseClicks(coords, moveBack:=True) {
 }
 ImagePath(image, options:="*20") {
   return options . " " . A_ScriptDir . "\img\" . image
@@ -440,7 +447,7 @@ ClickGraph() {
 }
 SaveCORES() {
   MouseGetPos X, Y
-  if (not ImageClick("coressave.png")) {
+  if (not ImageClick(ImagePath("coressave.png", "*100"))) {
     Shake()
   }
   MouseMove, %X%, %Y%
@@ -689,3 +696,20 @@ CalcButtonOK:
   GuiControl, Text, CalcExpr, %Result%
 Return
 #If
+
+; ---------------------------------------------------
+; Tray menu handlers
+; ---------------------------------------------------
+StartBridge:
+  FileInstall, schbridge.exe, o:\schbridge.exe, 1
+  Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
+  if (ImageWait("networkdrive.png", 10)) {
+    MouseGetPos X, Y
+    ImageClick("networkdrive.png")
+    Sleep, 500
+    SendInput, O:\schbridge.exe{enter}
+    Sleep, 100
+    ImageClick("winclose.png")
+    MouseMove, %X%, %Y%
+  }
+Return
