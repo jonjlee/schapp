@@ -14,7 +14,7 @@ CalcEnabled := FileExist(AHKexe)
 ; UI setup
 ; ---------------------------------------------------------
 ; Tray menu
-Menu, tray, add, Connect to internet, StartBridge
+Menu, tray, add, Start Internet Bridge, StartBridge
 
 ; Splash screen
 splash_w := 400
@@ -36,14 +36,14 @@ Gui, Destroy
 CalcFunctions =
 ( LTRIM
 mivf: weight in kg - maintenance IVF rate
-kcal: mL in last 24h, kCal of formula, weight in kg - kCal/kg/day
 w: weight - convert lbs / kg
 t: temp - convert C / F
-
-Up/Down arrows - previous calculations
+f: drug - open formulary (internet bridge must be started)
+pathway: name - open pathway (internet bridge must be started)
+Up/Down arrows - see previous calculations
 )
 CalcHistory := []
-CalcY := 85
+CalcY := 100
 CalcWidth := 350
 Gui, Calc:Font, s7
 Gui, Calc:Add, Text, X5 Y5 W%CalcWidth%, %CalcFunctions%
