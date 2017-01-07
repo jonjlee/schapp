@@ -566,12 +566,12 @@ Return
   Gui, Add, Text, xs, O - Orders  (or Ctrl+Shift+Alt + O)
   Gui, Add, Text, xs, V - Vitals  (or Ctrl+Shift+Alt + V)
   Gui, Add, Text, xs, L - Labs  (or Ctrl+Shift+Alt + L)
+  Gui, Add, Text, xs, U - Documents  (or Ctrl+Shift+Alt + U)
   Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
   Gui, Add, Text, xs, I - I/Os  (or Ctrl+Shift+Alt + I)
   Gui, Add, Text, xs, M - MAR Summary  (or Ctrl+Shift+Alt + M)
 
   Gui, Add, Text, xs, --- Patient Summary  (use Ctrl+Shift+Alt + S)
-  Gui, Add, Text, xs, --- Documents  (use Ctrl+Shift+Alt + U)
 
   Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
@@ -615,8 +615,6 @@ Return
     Return
   } else if (key = "n") {
     ShowNotes()
-  } else if (key = "d") {
-    ShowDocuments()
   } else if (key = "o") {
     ShowOrders()
   } else if (key = "v") {
