@@ -6,6 +6,7 @@
 ; Configuration
 ; ---------------------------------------------------------
 SetTitleMatchMode 2
+SetDefaultMouseSpeed, 0
 AHKExe := A_Temp . "\AutoHotKey.exe"
 FileInstall, AutoHotKey.exe, % AHKExe, 1
 CalcEnabled := FileExist(AHKexe)
@@ -73,6 +74,7 @@ FileInstall, img\check.png, img\check.png, 1
 FileInstall, img\checked.PNG, img\checked.PNG, 1
 FileInstall, img\clipboard.png, img\clipboard.png, 1
 FileInstall, img\close.png, img\close.png, 1
+FileInstall, img\cores.png, img\cores.png, 1
 FileInstall, img\coresexit.png, img\coresexit.png, 1
 FileInstall, img\coressave.png, img\coressave.png, 1
 FileInstall, img\discharge.png, img\discharge.png, 1
@@ -80,10 +82,13 @@ FileInstall, img\dropdown.png, img\dropdown.png, 1
 FileInstall, img\exit.png, img\exit.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
 FileInstall, img\graph.png, img\graph.png, 1
+FileInstall, img\hilitedrow.png, img\hilitedrow.png, 1
 FileInstall, img\labs.png, img\labs.png, 1
 FileInstall, img\modify.png, img\modify.png, 1
 FileInstall, img\navigator.png, img\navigator.png, 1
 FileInstall, img\networkdrive.png, img\networkdrive.png, 1
+FileInstall, img\orca.png, img\orca.png, 1
+FileInstall, img\orcaptlist.png, img\orcaptlist.png, 1
 FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\ordersall.png, img\ordersall.png, 1
 FileInstall, img\primaryres.png, img\primaryres.png, 1
@@ -126,13 +131,25 @@ Join(arr, sep:=",") {
 MouseClicks(coords, moveBack:=True) {
 }
 ImagePath(image, options:="*20") {
-  return options . " " . A_ScriptDir . "\img\" . image
+  if (SubStr(image, 1, 1) <> "*") {
+    return options . " " . A_ScriptDir . "\img\" . image
+  } else {
+    return image
+  }
+}
+ImageExists(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
+  image := ImagePath(image)
+  if (maxX = 0) {
+    maxX = A_ScreenWidth
+  }
+  if (maxY = 0) {
+    maxY = A_ScreenHeight
+  }
+  ImageSearch, X, Y, minX, minY, maxX, maxY, %image%
+  return (ErrorLevel = 0)
 }
 ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0) {
-  if (SubStr(image, 1, 1) <> "*") {
-    image := ImagePath(image)
-  }
-
+  image := ImagePath(image)
   Arr := []
   lastX := minX
   lastY := minY
@@ -202,23 +219,41 @@ CursorNotBusyWait(sec:=5) {
 ; -----------------------------------------------------------------------------
 ; Main tasks
 ; -----------------------------------------------------------------------------
+isORCA() {
+  return ImageExists("orca.png", 0, 0, 150, 100)
+}
+
 ShowNotes() {
   ; Notes via menu
+  MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 235
-  MouseMove, 250, 360
+  if (isORCA()) {
+    MouseClick, , 190, 260
+    MouseMove, %X%, %Y%
+  } else {
+    MouseClick, , 190, 235
+    MouseMove, 250, 360
+  }  
 }
 ShowDocuments() {
   ; Documents via menu
   MouseClick, , 190, 40
-  MouseClick, , 190, 210
+  if (isORCA()) {
+    MouseClick, , 190, 245
+  } else {
+    MouseClick, , 190, 210
+  }
   MouseMove, 240, 290
 }
 ShowOrders() {
   ; Orders via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 105
+  if (isORCA()) {
+    MouseClick, , 190, 415
+  } else {
+    MouseClick, , 190, 105
+  }
   MouseMove, %X%, %Y%
 
   ;MouseClick, , 730, 350   ; focus order list
@@ -228,10 +263,14 @@ ShowVitals() {
   ; Flowsheets via menu > Provider Overview tab > Vitals Signs in left sided Navigator
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 150
-  MouseMove, %X%, %Y%
-  if (ImageWait(ImagePath("provideroverview.png", "*100"))) {
-    ImageClick("provideroverview.png")
+  if (isORCA()) {
+    MouseClick, , 190, 790
+  } else {
+    MouseClick, , 190, 150
+    MouseMove, %X%, %Y%
+    if (ImageWait(ImagePath("provideroverview.png", "*100"))) {
+      ImageClick("provideroverview.png")
+    }
   }
   MouseMove, %X%, %Y%
 }
@@ -239,10 +278,14 @@ ShowLabs() {
   ; Flowsheets via menu > Labs tab
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 150
-  MouseMove, %X%, %Y%
-  if (ImageWait(ImagePath("labs.png", "*100"))) {
-    ImageClick("labs.png")
+  if (isORCA()) {
+    MouseClick, , 190, 855
+  } else {
+    MouseClick, , 190, 150
+    MouseMove, %X%, %Y%
+    if (ImageWait(ImagePath("labs.png", "*100"))) {
+      ImageClick("labs.png")
+    }
   }
   MouseMove, %X%, %Y%
 }
@@ -250,21 +293,33 @@ ShowIView() {
   ; IView and I&O
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 285
+  if (isORCA()) {
+    MouseClick, , 190, 525
+  } else {
+    MouseClick, , 190, 285
+  }
   MouseMove, %X%, %Y%
 }
 ShowMAR() {
   ; MAR Summary via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 310
+  if (isORCA()) {
+    MouseClick, , 190, 460
+  } else {
+    MouseClick, , 190, 310
+  }
   MouseMove, %X%, %Y%
 }
 ShowPatientSummary() {
   ; Patient Summary via menu
   MouseGetPos X, Y
   MouseClick, , 190, 40
-  MouseClick, , 190, 65
+  if (isORCA()) {
+    MouseClick, , 190, 85
+  } else {
+    MouseClick, , 190, 65
+  }
   MouseMove, %X%, %Y%
 }
 ShowPatientList() {
@@ -273,25 +328,40 @@ ShowPatientList() {
   if (WinActive("FirstNet") or (WinActive("Opened by") and ImageSearchAll(_, "firstneticon.png"))) {
     MouseClick, , 100, 40
     MouseClick, , 100, 55
+  } else if (isORCA()) {
+    ImageClick("orcaptlist.png")
   } else {
     MouseClick, , 350, 60
-    MouseClick, , 250, 700
+    Sleep, 200
+    ImageSearch, hiliteX, hiliteY, 0, 0, 30, %A_ScreenHeight%, % ImagePath("hilitedrow.png")
+    if (ErrorLevel = 0) {
+      MouseClick, , % hiliteX+10, % hiliteY
+    }
   }
   MouseMove, %X%, %Y%
 }
 ShowCores() {
   ; CORES via menu
   MouseGetPos X, Y
-  MouseClick, , 100, 40
-  MouseClick, , 100, 220
+  if (isORCA()) {
+    ImageClick("cores.png")
+  } else {
+    MouseClick, , 100, 40
+    MouseClick, , 100, 220
+  }
   MouseMove, %X%, %Y%
 }
 ShowDischarge() {
   ; Discharge via Patient Actions menu
   MouseGetPos X, Y
-  MouseClick, , 360, 40
-  if (ImageWait("discharge.png")) {
-    ImageClick("discharge.png")
+  if (isORCA()) {
+    MouseClick, , 190, 40
+    MouseClick, , 190, 615
+  } else {
+    MouseClick, , 360, 40
+    if (ImageWait("discharge.png")) {
+      ImageClick("discharge.png")
+    }
   }
   MouseMove, %X%, %Y%
 }
@@ -566,7 +636,7 @@ Return
   Gui, Add, Text, xs, O - Orders  (or Ctrl+Shift+Alt + O)
   Gui, Add, Text, xs, V - Vitals  (or Ctrl+Shift+Alt + V)
   Gui, Add, Text, xs, L - Labs  (or Ctrl+Shift+Alt + L)
-  Gui, Add, Text, xs, U - Documents  (or Ctrl+Shift+Alt + U)
+  Gui, Add, Text, xs, U - Documents  (use Ctrl+Shift+Alt + U)
   Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
   Gui, Add, Text, xs, I - I/Os  (or Ctrl+Shift+Alt + I)
   Gui, Add, Text, xs, M - MAR Summary  (or Ctrl+Shift+Alt + M)
@@ -589,9 +659,9 @@ Return
   Gui, Font, w700
   Gui, Add, Text, xs, Clipboards
   Gui, Font, w100
-  Gui, Add, Text, xs, N - Next clipboard  (or Ctrl+K then N)
-  Gui, Add, Text, xs, R - Mark flowsheet read  (or Ctrl+K then R)
   Gui, Add, Text, xs, ! - Clear all clipboards  (or Ctrl+K then !)
+  Gui, Add, Text, xs, --- Next clipboard  (use Ctrl+K then N)
+  Gui, Add, Text, xs, --- Mark flowsheet read  (use Ctrl+K then R)
 
   Gui, Font, w700
   Gui, Add, Text, xs, Other
@@ -615,6 +685,8 @@ Return
     Return
   } else if (key = "n") {
     ShowNotes()
+  } else if (key = "d") {
+    ShowDocuments()
   } else if (key = "o") {
     ShowOrders()
   } else if (key = "v") {
