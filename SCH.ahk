@@ -91,6 +91,7 @@ FileInstall, img\orca.png, img\orca.png, 1
 FileInstall, img\orcaptlist.png, img\orcaptlist.png, 1
 FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\ordersall.png, img\ordersall.png, 1
+FileInstall, img\ordersallsel.png, img\ordersallsel.png, 1
 FileInstall, img\primaryres.png, img\primaryres.png, 1
 FileInstall, img\provideroverview.png, img\provideroverview.png, 1
 FileInstall, img\refresh.png, img\refresh.png, 1
@@ -107,8 +108,8 @@ Shake()
 {
   MouseGetPos X, Y
   Loop, 2 {
-    MouseMove, % X+7, % Y
-    MouseMove, % X-7, % Y
+    MouseMove, % X+8, % Y, 2
+    MouseMove, % X-8, % Y, 2
   }
   MouseMove, %X%, %Y%
 }
@@ -140,12 +141,12 @@ ImagePath(image, options:="*20") {
 ImageExists(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
   image := ImagePath(image)
   if (maxX = 0) {
-    maxX = A_ScreenWidth
+    maxX := A_ScreenWidth
   }
   if (maxY = 0) {
-    maxY = A_ScreenHeight
+    maxY := A_ScreenHeight
   }
-  ImageSearch, X, Y, minX, minY, maxX, maxY, %image%
+  ImageSearch, X, Y, %minX%, %minY%, %maxX%, %maxY%, %image%
   return (ErrorLevel = 0)
 }
 ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0) {
@@ -474,11 +475,17 @@ CheckAllCheckboxes(check:=true) {
     }
   }
 }
-ShowAllOrders() {
+ToggleAllOrders() {
+  ; If all orders shown, then select active orders & vice versa
+  image := "ordersactive.png"
+  if (not ImageExists("ordersall.png", , , , 320) and not ImageExists("ordersallsel.png", , , , 320)) {
+    image := "ordersall.png"
+  }
+  
   ; Click dropdown, wait for menu to show, then select All Orders
   ImageClick("dropdown.png")
   Sleep, 500
-  if (not ImageClick("ordersall.png")) {
+  if (not ImageClick(image)) {
     Shake()
   }
 }
@@ -530,7 +537,7 @@ HandleSecondaryKey(key) {
   MouseGetPos X, Y
 
   if (key = "a") {
-    ShowAllOrders() 
+    ToggleAllOrders() 
   } else if (key = "d") {
     ClickAdd()
   } else if (key = "m") {
@@ -583,7 +590,7 @@ HandleSecondaryKey(key) {
 ; Less common secondary tasks - activate by Ctrl+K followed by another letter
 ^k::
 ^!+k::
-  Input, key, I L1 T1
+  Input, key, I L1 T3
   if (ErrorLevel = "Timeout") {
     Shake()
     Return
@@ -633,15 +640,14 @@ Return
   Gui, Font, w100
   Gui, Add, Text, xs, C - CORES  (or Ctrl+Shift+Alt + C)
   Gui, Add, Text, xs, P - Patient List  (or Ctrl+Shift+Alt + P)
+  Gui, Add, Text, xs, S - Patient Summary  (or Ctrl+Shift+Alt + S)
   Gui, Add, Text, xs, O - Orders  (or Ctrl+Shift+Alt + O)
   Gui, Add, Text, xs, V - Vitals  (or Ctrl+Shift+Alt + V)
   Gui, Add, Text, xs, L - Labs  (or Ctrl+Shift+Alt + L)
-  Gui, Add, Text, xs, U - Documents  (use Ctrl+Shift+Alt + U)
+  Gui, Add, Text, xs, U - Documents  (or Ctrl+Shift+Alt + U)
   Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
   Gui, Add, Text, xs, I - I/Os  (or Ctrl+Shift+Alt + I)
   Gui, Add, Text, xs, M - MAR Summary  (or Ctrl+Shift+Alt + M)
-
-  Gui, Add, Text, xs, --- Patient Summary  (use Ctrl+Shift+Alt + S)
 
   Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
@@ -653,15 +659,14 @@ Return
   Gui, Add, Text, xs, Orders
   Gui, Font, w100
   Gui, Add, Text, xs, D - Add Order or Note  (or Ctrl+K then D)
-  Gui, Add, Text, xs, A - All Orders  (or Ctrl+K then A)
-  Gui, Add, Text, xs, S - Active Orders  (or Ctrl+K then S)
+  Gui, Add, Text, xs, A - Toggle All / Active Orders  (or Ctrl+K then A)
 
   Gui, Font, w700
   Gui, Add, Text, xs, Clipboards
   Gui, Font, w100
   Gui, Add, Text, xs, ! - Clear all clipboards  (or Ctrl+K then !)
-  Gui, Add, Text, xs, --- Next clipboard  (use Ctrl+K then N)
-  Gui, Add, Text, xs, --- Mark flowsheet read  (use Ctrl+K then R)
+  Gui, Add, Text, xs, X - Next clipboard  (use Ctrl+K then N)
+  Gui, Add, Text, xs, R - Mark flowsheet read  (or Ctrl+K then R)
 
   Gui, Font, w700
   Gui, Add, Text, xs, Other
@@ -683,10 +688,10 @@ Return
   ; Allow for shortcuts to be launched directly from the help screen
   if (key = "") {
     Return
+  } else if (key = "s") {
+    ShowPatientSummary()
   } else if (key = "n") {
     ShowNotes()
-  } else if (key = "d") {
-    ShowDocuments()
   } else if (key = "o") {
     ShowOrders()
   } else if (key = "v") {
@@ -707,7 +712,9 @@ Return
     CloseChart()
   } else if (key = "r" and not WinActive("Flowsheet")) {
     Refresh()
-  } else if (key = "#" and CalcEnabled) {
+  } else if (key = "x") {
+    OpenNextClipboard()
+  } else if ((key = "#" or key = "3") and CalcEnabled) {
     ShowCalculator()
   } else {
     HandleSecondaryKey(key)
