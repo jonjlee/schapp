@@ -83,6 +83,7 @@ FileInstall, img\coressave.png, img\coressave.png, 1
 FileInstall, img\discharge.png, img\discharge.png, 1
 FileInstall, img\dropdown.png, img\dropdown.png, 1
 FileInstall, img\exit.png, img\exit.png, 1
+FileInstall, img\exit2.png, img\exit2.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
 FileInstall, img\graph.png, img\graph.png, 1
 FileInstall, img\hilitedrow.png, img\hilitedrow.png, 1
@@ -381,7 +382,9 @@ CloseChart() {
   MouseGetPos X, Y
   if (WinActive("Flowsheet") or WinActive("Document Viewer")) {
     ; Close flowsheet via exit button
-    ImageClick("exit.png")
+    if (not ImageClick(ImagePath("exit.png", "*100"))) {
+      ImageClick("exit2.png")
+    }
   } else if (WinActive("CORES")) {
     ; Close CORES via Save & Exit button
     ImageClick(ImagePath("coresexit.png", "*100"))
@@ -412,7 +415,9 @@ OpenNextClipboard() {
 MarkClipboardRead() {
   ; Mark clipboard as read & refresh
   ImageClick("seen.png")
-  ImageClick(ImagePath("exit.png", "*100"))
+  if (not ImageClick(ImagePath("exit.png", "*100"))) {
+    ImageClick("exit2.png")
+  }
 
   ; Wait for results popup to disappear and main window to reactivate
   WinWait("PowerChart")
@@ -454,7 +459,9 @@ MarkAllClipboardsRead() {
     
     Sleep, 500
     ImageClick("seen.png")
-    ImageClick(ImagePath("exit.png", "*100"))
+    if (not ImageClick(ImagePath("exit.png", "*100"))) {
+      ImageClick("exit2.png")
+    }
 
     CursorNotBusyWait()
     if (not WinWait("PowerChart")) {
