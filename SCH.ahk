@@ -632,7 +632,7 @@ Return
   titleh := 40
   col2x := w/2 - 10
   x := (A_ScreenWidth - w - 2)
-  y := (A_ScreenHeight - h - 2)
+  y := (A_ScreenHeight - h - 45)
 
   ; Build window text
   Gui, Font, s11
