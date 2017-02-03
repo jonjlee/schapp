@@ -1,3 +1,5 @@
+#singleinstance force
+
 ; Test function - Ctrl+Shift+Alt+T
 ;^!+t::
 ;Return
