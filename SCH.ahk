@@ -104,6 +104,12 @@ FileInstall, img\winclose.png, img\winclose.png, 1
 ; ---------------------------------------------------------
 ; Helpers
 ; ---------------------------------------------------------
+Sonar()
+{
+  DllCall("SystemParametersInfo", UInt, 0x101D, UInt, 0, UInt, 1, UInt, 0) ;SPI_SETMOUSESONAR ON
+	Send {LCtrl} ;Invoke MouseSonar
+  DllCall("SystemParametersInfo", UInt, 0x101D, UInt, 0, UInt, 0, UInt, 0) ;SPI_SETMOUSESONAR OFF
+}
 Shake()
 {
   MouseGetPos X, Y
@@ -536,7 +542,9 @@ SaveCORES() {
 HandleSecondaryKey(key) {
   MouseGetPos X, Y
 
-  if (key = "a") {
+  if (key = "") {
+    return
+  } else if (key = "a") {
     ToggleAllOrders() 
   } else if (key = "d") {
     ClickAdd()
@@ -590,7 +598,7 @@ HandleSecondaryKey(key) {
 ; Less common secondary tasks - activate by Ctrl+K followed by another letter
 ^k::
 ^!+k::
-  Input, key, I L1 T3
+  Input, key, I L1 T3, {Escape}{LControl}{RControl}{LAlt}{RAlt}{Enter}{Backspace}{Tab}
   if (ErrorLevel = "Timeout") {
     Shake()
     Return
@@ -682,7 +690,7 @@ Return
   ; Show window and wait for a key
   Gui, -Caption +AlwaysOntop +Toolwindow +Border
   Gui, Show, x%x% y%y% h%h% w%w% NoActivate, CIS Shortcut Key
-  Input, key, I L1 T5, {LControl}{RControl}
+  Input, key, I L1 T5, {Escape}{Space}{LControl}{RControl}{LAlt}{RAlt}{Enter}{Backspace}{Tab}
   Gui, Destroy
 
   ; Allow for shortcuts to be launched directly from the help screen
