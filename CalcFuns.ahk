@@ -22,6 +22,29 @@ kcal(cclast24hours,formulakcal,weightkg)
 {
   return (cclast24hours / weightkg * formulakcal / 30) . " mL/kg/d"
 }
+oz(kg)
+{
+  ; oz/feed infant should be eating, based on 140 mL/kg/day
+  if (kg > 1000) {
+    ; convert weight from grams to kg if needed
+    kg := kg / 1000
+  }
+  
+  ; TF of 140-160, 30 mL per oz, no more than 25-30oz per day
+  minvol := 140 * kg / 30
+  minvol := (minvol > 25) ? 25 : minvol
+  minvol := Round(Round(minvol * 2) / 2, 1)
+
+  maxvol := 160 * kg / 30
+  maxvol := (maxvol > 30) ? 30 : maxvol
+  maxvol := Round(Round(maxvol * 2) / 2, 1)
+  
+  if (minvol < maxvol) {
+    return minvol . " to " . maxvol . " oz/day"
+  } else {
+    return minvol " oz/day"
+  }
+}
 w(weight) {
   kg := Round(weight / 2.2046, 3)
   lbsDecimal := weight * 2.2046
