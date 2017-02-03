@@ -413,7 +413,7 @@ OpenNextClipboard() {
 MarkClipboardRead() {
   ; Mark clipboard as read & refresh
   ImageClick("seen.png")
-  ImageClick("exit.png")
+  ImageClick(ImagePath("exit.png", "*100"))
 
   ; Wait for results popup to disappear and main window to reactivate
   WinWait("PowerChart")
@@ -455,7 +455,7 @@ MarkAllClipboardsRead() {
     
     Sleep, 500
     ImageClick("seen.png")
-    ImageClick("exit.png")
+    ImageClick(ImagePath("exit.png", "*100"))
 
     CursorNotBusyWait()
     if (not WinWait("PowerChart")) {
