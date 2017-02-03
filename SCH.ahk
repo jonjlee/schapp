@@ -71,6 +71,7 @@ if (not FileExist("img")) {
 }
 FileInstall, img\add.png, img\add.png, 1
 FileInstall, img\add2.png, img\add2.png, 1
+FileInstall, img\add3.png, img\add3.png, 1
 FileInstall, img\arrowright.png, img\arrowright.png, 1
 FileInstall, img\check.png, img\check.png, 1
 FileInstall, img\checked.PNG, img\checked.PNG, 1
@@ -508,6 +509,8 @@ ClickAdd() {
   if (ImageClick("add.png")) {
     return
   } else if (ImageClick("add2.png")) {
+    return
+  } else if (ImageClick("add3.png")) {
     return
   } else if (ImageSearchAll(images, "arrowright.png", 1)) {
     MouseClick, , 360, 40
