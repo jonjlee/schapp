@@ -557,7 +557,7 @@ HandleSecondaryKey(key) {
     ClickGraph()
   } else if (key = "s") {
     ShowActiveOrders()
-  } else if (key = "n") {
+  } else if (key = "n" or key = "x") {
     OpenNextClipboard()
   } else if (key = "r") {
     MarkClipboardRead()
@@ -723,8 +723,6 @@ Return
     CloseChart()
   } else if (key = "r" and not WinActive("Flowsheet")) {
     Refresh()
-  } else if (key = "x") {
-    OpenNextClipboard()
   } else if ((key = "#" or key = "3") and CalcEnabled) {
     ShowCalculator()
   } else {
