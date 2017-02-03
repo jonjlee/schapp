@@ -337,10 +337,8 @@ ShowPatientList() {
   if (WinActive("FirstNet") or (WinActive("Opened by") and ImageSearchAll(_, "firstneticon.png"))) {
     MouseClick, , 100, 40
     MouseClick, , 100, 55
-  } else if (isORCA()) {
-    ImageClick("orcaptlist.png")
   } else {
-    MouseClick, , 350, 60
+    ImageClick("orcaptlist.png")
     Sleep, 200
     ImageSearch, hiliteX, hiliteY, 0, 0, 30, %A_ScreenHeight%, % ImagePath("hilitedrow.png")
     if (ErrorLevel = 0) {
