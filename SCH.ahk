@@ -344,7 +344,7 @@ ShowPatientList() {
     Sleep, 200
     ImageSearch, hiliteX, hiliteY, 0, 0, 30, %A_ScreenHeight%, % ImagePath("hilitedrow.png")
     if (ErrorLevel = 0) {
-      MouseClick, , % hiliteX+10, % hiliteY
+      MouseClick, , % hiliteX+40, % hiliteY
     }
   }
   MouseMove, %X%, %Y%
