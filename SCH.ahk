@@ -196,13 +196,13 @@ ImageWait(image, sec:=5) {
     image := ImagePath(image)
   }
 
-  n := sec * 1000 / 100
+  n := sec * 1000 / 500
   Loop %n% {
     ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, %image%
     if (ErrorLevel = 0) {
       return true
     }
-    Sleep, 100
+    Sleep, 500
   }
   return false
 }
@@ -481,7 +481,7 @@ CheckAllCheckboxes(check:=true) {
   }
 
   ; select all unchecked boxes on screen
-  ImageSearchAll(checkboxes, img, , , 237)
+  ImageSearchAll(checkboxes, img, , , 250)
   for i, checkbox in checkboxes {
     MouseClick, , % checkbox[1], % checkbox[2]
     if (A_TimeIdlePhysical < 100) {
