@@ -117,10 +117,10 @@ Sonar()
 Shake()
 {
   MouseGetPos X, Y
-  Loop, 2 {
-    MouseMove, % X+8, % Y, 2
-    MouseMove, % X-8, % Y, 2
-  }
+  MouseMove, % X+35, % Y+4, 0
+  MouseMove, % X-35, % Y-3, 1
+  MouseMove, % X+15, % Y-3, 2
+  MouseMove, % X-6, % Y+2, 2
   MouseMove, %X%, %Y%
 }
 Log(event) {
@@ -139,8 +139,6 @@ Join(arr, sep:=",") {
   }
   return ret
 }
-MouseClicks(coords, moveBack:=True) {
-}
 ImagePath(image, options:="*20") {
   if (SubStr(image, 1, 1) <> "*") {
     return options . " " . A_ScriptDir . "\img\" . image
@@ -150,22 +148,20 @@ ImagePath(image, options:="*20") {
 }
 ImageExists(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
   image := ImagePath(image)
-  if (maxX = 0) {
-    maxX := A_ScreenWidth
-  }
-  if (maxY = 0) {
-    maxY := A_ScreenHeight
-  }
+  maxX := (maxX = 0) ? A_ScreenWidth : maxX
+  maxY := (maxY = 0) ? A_ScreenHeight : maxY
   ImageSearch, X, Y, %minX%, %minY%, %maxX%, %maxY%, %image%
   return (ErrorLevel = 0)
 }
-ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0) {
+ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0, maxX:=0, maxY:=0) {
   image := ImagePath(image)
-  Arr := []
+  maxX := (maxX = 0) ? A_ScreenWidth : maxX
+  maxY := (maxY = 0) ? A_ScreenHeight : maxY
   lastX := minX
   lastY := minY
+  Arr := []
   Loop {
-    ImageSearch, X, Y, %lastX%, %lastY%, %A_ScreenWidth%, %A_ScreenHeight%, %image%
+    ImageSearch, X, Y, %lastX%, %lastY%, %maxX%, %maxY%, %image%
     if (ErrorLevel > 0) {
       break
     }
@@ -183,48 +179,62 @@ ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:
   }
   return (Arr.length() > 0)
 }
-ImageClick(image, n:=1, orientation:="Vertical", minX:=0, minY:=0) {
-  ImageSearchAll(images, image, orientation, n, minX, minY)
+ImageClick(image, n:=1, orientation:="Vertical", minX:=0, minY:=0, maxX:=0, maxY:=0) {
+  ImageSearchAll(images, image, orientation, n, minX, minY, maxX, maxY)
   if (images.MaxIndex() >= n) {
     MouseClick, , % images[n][1], % images[n][2]
     return true   
   }
   return false
 }
-ImageWait(image, sec:=5) {
-  if (SubStr(image, 1, 1) <> "*") {
-    image := ImagePath(image)
-  }
+ImageWaitWhileIdle(image, sec:=5, minX:=0, minY:=0, maxX:=0, maxY:=0) {
+  return ImageWait(image, sec, minX, minY, maxX, maxY, true)
+}
+ImageWait(image, sec:=5, minX:=0, minY:=0, maxX:=0, maxY:=0, onlyWhileIdle:=false) {
+  image := (SubStr(image, 1, 1) <> "*") ? ImagePath(image) : image
+  maxX := (maxX = 0) ? A_ScreenWidth : maxX
+  maxY := (maxY = 0) ? A_ScreenHeight : maxY
 
-  n := sec * 1000 / 500
-  Loop %n% {
-    ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, %image%
+  ; Look for an image for a maximum number of seconds.
+  ; Abort if there is user activity when onlyWhileIdle is set.
+  maxMs := sec * 1000
+  start := A_TickCount
+  Loop {
+    ImageSearch, X, Y, %minX%, %minY%, %maxX%, %maxY%, %image%
     if (ErrorLevel = 0) {
       return true
     }
-    Sleep, 500
+    if ((A_TickCount - start > maxMs) or (onlyWhileIdle and A_TimeIdle < 100)) {
+      return false
+    }
+    Sleep, 100
   }
-  return false
 }
 WinWait(title, sec:=5) {
-  n := sec * 1000 / 300
-  Loop %n% {
+  maxMs := sec * 1000
+  start := A_TickCount
+  Loop {
     if (WinActive(title)) {
       return true
     }
-    Sleep, 300
-  }
-  return false
-}
-CursorNotBusyWait(sec:=5) {
-  n := sec * 1000 / 300
-  Loop %n% {
-    if ((A_Cursor <> "Wait") and (A_Cursor <> "AppStarting")) {
-      return true
+    if (A_TickCount - start > maxMs) {
+      return false
     }
     Sleep, 300
   }
-  return false
+}
+CursorNotBusyWait(sec:=5) {   ; Not compatible with citrix: A_Cursor = "Unknown"
+  maxMs := sec * 1000
+  start := A_TickCount
+  Loop {
+    if ((A_Cursor <> "Wait") and (A_Cursor <> "AppStarting")) {
+      return true
+    }
+    if (A_TickCount - start > maxMs) {
+      return false
+    }
+    Sleep, 300
+  }
 }
 
 ; -----------------------------------------------------------------------------
@@ -266,9 +276,6 @@ ShowOrders() {
     MouseClick, , 190, 105
   }
   MouseMove, %X%, %Y%
-
-  ;MouseClick, , 730, 350   ; focus order list
-  ;MouseMove, 240, 230	    ; hover over add button
 }
 ShowVitals() {
   ; Flowsheets via menu > Provider Overview tab > Vitals Signs in left sided Navigator
@@ -276,14 +283,16 @@ ShowVitals() {
   MouseClick, , 190, 40
   if (isORCA()) {
     MouseClick, , 190, 790
+    MouseMove, %X%, %Y%
   } else {
     MouseClick, , 190, 150
     MouseMove, %X%, %Y%
-    if (ImageWait(ImagePath("provideroverview.png", "*100"))) {
+    if (ImageWaitWhileIdle(ImagePath("provideroverview.png", "*100"), , 100, 200, 1000, 300)) {
+      MouseGetPos X, Y
       ImageClick("provideroverview.png")
+      MouseMove, %X%, %Y%
     }
   }
-  MouseMove, %X%, %Y%
 }
 ShowLabs() {
   ; Flowsheets via menu > Labs tab
@@ -291,14 +300,16 @@ ShowLabs() {
   MouseClick, , 190, 40
   if (isORCA()) {
     MouseClick, , 190, 855
+    MouseMove, %X%, %Y%
   } else {
     MouseClick, , 190, 150
     MouseMove, %X%, %Y%
-    if (ImageWait(ImagePath("labs.png", "*100"))) {
+    if (ImageWaitWhileIdle(ImagePath("labs.png", "*100"), , 100, 200, 1000, 300)) {
+      MouseGetPos X, Y
       ImageClick("labs.png")
+      MouseMove, %X%, %Y%
     }
   }
-  MouseMove, %X%, %Y%
 }
 ShowIView() {
   ; IView and I&O
@@ -368,7 +379,8 @@ ShowDischarge() {
     MouseClick, , 190, 615
   } else {
     MouseClick, , 360, 40
-    if (ImageWait("discharge.png")) {
+    if (ImageWaitWhileIdle("discharge.png")) {
+      MouseGetPos X, Y
       ImageClick("discharge.png")
     }
   }
@@ -414,15 +426,19 @@ OpenNextClipboard() {
 }
 MarkClipboardRead() {
   ; Mark clipboard as read & refresh
-  ImageClick("seen.png")
+  seen := ImageClick("seen.png")
   if (not ImageClick(ImagePath("exit.png", "*100"))) {
     ImageClick("exit2.png")
+  }
+  
+  ; If seen icon not clicked, don't click refresh
+  if (not seen) {
+    return
   }
 
   ; Wait for results popup to disappear and main window to reactivate
   WinWait("PowerChart")
-  CursorNotBusyWait()
-
+  Sleep, 100
   ImageClick("refresh.png")
 }
 MarkAllClipboardsRead() {
@@ -434,16 +450,17 @@ MarkAllClipboardsRead() {
   ImageSearchAll(icons, "clipboard.png")
   icons.RemoveAt(1)
   for i, icon in icons {
+    ; click next clipboard
     MouseClick, , % icon[1], % icon[2]
 
-    ; Wait 500ms for possible abort - press any key to abort 
-    Input, key, I L1 T0.5
+    ; Wait 600ms for possible abort - press any key to abort 
+    Input, key, I L1 T0.6
     if (key <> "") {
       Shake()
       Return
     }
 
-    CursorNotBusyWait()
+    ; Click "Primary resident" if there is a popup
     ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, *20 %A_ScriptDir%\img\primaryres.png
     if (ErrorLevel = 0) {
       ImageClick("primaryres.png")
@@ -451,19 +468,25 @@ MarkAllClipboardsRead() {
       Sleep, 300
     }
     
-    CursorNotBusyWait()
+    ; Wait for flowsheet to appear - look for seen button
     if (not ImageWait("seen.png", 20)) {
       Shake()
       Return
     }
     
-    Sleep, 500
+    ; Wait another 250ms for possible abort before pressing seen icon
+    Input, key, I L1 T0.25
+    if (key <> "") {
+      Shake()
+      Return
+    }
+
+    ; Click seen & exit buttons
     ImageClick("seen.png")
     if (not ImageClick(ImagePath("exit.png", "*100"))) {
       ImageClick("exit2.png")
     }
 
-    CursorNotBusyWait()
     if (not WinWait("PowerChart")) {
       Shake()
       Return
