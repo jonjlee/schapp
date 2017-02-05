@@ -573,8 +573,6 @@ SaveCORES() {
 ; Shortcut keys
 ; -----------------------------------------------------------------------------
 HandleSecondaryKey(key) {
-  MouseGetPos X, Y
-
   if (key = "") {
     return
   } else if (key = "a") {
@@ -602,8 +600,6 @@ HandleSecondaryKey(key) {
   } else {
     Shake()   ; unrecognized
   }
-
-  MouseMove, %X%, %Y%
 }
 
 ; CIS / FirstNet shortcuts - only trigger when active window's title matches 
