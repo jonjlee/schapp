@@ -611,6 +611,21 @@ HandleSecondaryKey(key) {
     Shake()   ; unrecognized
   }
 }
+ClickLeft() {
+  ; click top left side of screen, i.e. title bar if 2 windows tiled side-by-side
+  CoordMode, Mouse, Screen
+  MouseGetPos X, Y
+  MouseClick, , A_ScreenWidth / 4, 5 
+  MouseMove, %X%, %Y%
+  CoordMode, Mouse, Relative
+}
+ClickRight() {
+  CoordMode, Mouse, Screen
+  MouseGetPos X, Y
+  MouseClick, , A_ScreenWidth * 3/4, 5 
+  MouseMove, %X%, %Y%
+  CoordMode, Mouse, Relative
+}
 
 ; CIS / FirstNet shortcuts - only trigger when active window's title matches 
 #If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet") or WinActive("Document Viewer") or WinActive("Diagnosis List") or WinActive("Medication Reconciliation") or WinActive("Summary of Visit") or WinActive("ED Callback"))
@@ -625,7 +640,7 @@ HandleSecondaryKey(key) {
 ^!+m::ShowMAR()
 ^!+s::ShowPatientSummary()
 ^!+p::ShowPatientList()
-^!+b::ShowEDBoard()
+^!+e::ShowEDBoard()
 ^!+c::ShowCores()
 ^!+d::ShowDischarge()
 
@@ -646,6 +661,9 @@ HandleSecondaryKey(key) {
 
   HandleSecondaryKey(key)
 Return
+
+^Left::ClickLeft()
+^Right::ClickRight()
 
 ; CORES popup window only shortcuts
 #If WinActive("CORES")
@@ -696,7 +714,7 @@ Return
   Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
   Gui, Add, Text, xs, I - I/Os  (or Ctrl+Shift+Alt + I)
   Gui, Add, Text, xs, M - MAR Summary  (or Ctrl+Shift+Alt + M)
-  Gui, Add, Text, xs, B - ED Board  (or Ctrl+Shift+Alt + B)
+  Gui, Add, Text, xs, E - ED Board (FirstNet only) (or Ctrl+Shift+Alt + E)
 
   Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
@@ -714,13 +732,14 @@ Return
   Gui, Add, Text, xs, Clipboards
   Gui, Font, w100
   Gui, Add, Text, xs, ! - Clear all clipboards  (or Ctrl+K then !)
-  Gui, Add, Text, xs, X - Next clipboard  (use Ctrl+K then N)
+  Gui, Add, Text, xs, X - Next clipboard  (use Ctrl+K then X)
   Gui, Add, Text, xs, R - Mark flowsheet read  (or Ctrl+K then R)
 
   Gui, Font, w700
   Gui, Add, Text, xs, Other
   Gui, Font, w100
   Gui, Add, Text, xs, Ctrl + ? - This help screen
+  Gui, Add, Text, xs, Ctrl+Shift+Alt + Backspace - Logout
 
   if (CalcEnabled) {
     Gui, Add, Text, xs, # - Calculator (or Ctrl+Shift+Alt + 3)
@@ -755,7 +774,7 @@ Return
     ShowMAR()
   } else if (key = "p") {
     ShowPatientList()
-  } else if (key = "b") {
+  } else if (key = "e") {
     ShowEDBoard()
   } else if (key = "c") {
     ShowCores()
