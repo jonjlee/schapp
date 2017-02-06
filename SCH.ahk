@@ -85,6 +85,7 @@ FileInstall, img\dropdown.png, img\dropdown.png, 1
 FileInstall, img\exit.png, img\exit.png, 1
 FileInstall, img\exit2.png, img\exit2.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
+FileInstall, img\flowsheetseeker.png, img\flowsheetseeker.png, 1
 FileInstall, img\graph.png, img\graph.png, 1
 FileInstall, img\hilitedrow.png, img\hilitedrow.png, 1
 FileInstall, img\labs.png, img\labs.png, 1
@@ -147,16 +148,18 @@ ImagePath(image, options:="*20") {
   }
 }
 ImageExists(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
+  WinGetPos, X, Y, W, H
   image := ImagePath(image)
-  maxX := (maxX = 0) ? A_ScreenWidth : maxX
-  maxY := (maxY = 0) ? A_ScreenHeight : maxY
+  maxX := (maxX = 0) ? W : maxX
+  maxY := (maxY = 0) ? H : maxY
   ImageSearch, X, Y, %minX%, %minY%, %maxX%, %maxY%, %image%
   return (ErrorLevel = 0)
 }
 ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0, maxX:=0, maxY:=0) {
+  WinGetPos, X, Y, W, H
   image := ImagePath(image)
-  maxX := (maxX = 0) ? A_ScreenWidth : maxX
-  maxY := (maxY = 0) ? A_ScreenHeight : maxY
+  maxX := (maxX = 0) ? W : maxX
+  maxY := (maxY = 0) ? H : maxY
   lastX := minX
   lastY := minY
   Arr := []
@@ -191,6 +194,7 @@ ImageWaitWhileIdle(image, sec:=5, minX:=0, minY:=0, maxX:=0, maxY:=0) {
   return ImageWait(image, sec, minX, minY, maxX, maxY, true)
 }
 ImageWait(image, sec:=5, minX:=0, minY:=0, maxX:=0, maxY:=0, onlyWhileIdle:=false) {
+  ; search whole screen, not window, since active window can change while waiting
   image := (SubStr(image, 1, 1) <> "*") ? ImagePath(image) : image
   maxX := (maxX = 0) ? A_ScreenWidth : maxX
   maxY := (maxY = 0) ? A_ScreenHeight : maxY
@@ -204,10 +208,10 @@ ImageWait(image, sec:=5, minX:=0, minY:=0, maxX:=0, maxY:=0, onlyWhileIdle:=fals
     if (ErrorLevel = 0) {
       return true
     }
+    Sleep, 100
     if ((A_TickCount - start > maxMs) or (onlyWhileIdle and A_TimeIdle < 100)) {
       return false
     }
-    Sleep, 100
   }
 }
 WinWait(title, sec:=5) {
@@ -287,7 +291,7 @@ ShowVitals() {
   } else {
     MouseClick, , 190, 150
     MouseMove, %X%, %Y%
-    if (ImageWaitWhileIdle(ImagePath("provideroverview.png", "*100"), , 100, 200, 1000, 300)) {
+    if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
       MouseGetPos X, Y
       ImageClick("provideroverview.png")
       MouseMove, %X%, %Y%
@@ -304,7 +308,7 @@ ShowLabs() {
   } else {
     MouseClick, , 190, 150
     MouseMove, %X%, %Y%
-    if (ImageWaitWhileIdle(ImagePath("labs.png", "*100"), , 100, 200, 1000, 300)) {
+    if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
       MouseGetPos X, Y
       ImageClick("labs.png")
       MouseMove, %X%, %Y%
