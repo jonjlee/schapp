@@ -148,7 +148,7 @@ ImagePath(image, options:="*20") {
   }
 }
 ImageExists(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
-  WinGetPos, X, Y, W, H
+  WinGetActiveStats, _, W, H, _, _
   image := ImagePath(image)
   maxX := (maxX = 0) ? W : maxX
   maxY := (maxY = 0) ? H : maxY
@@ -156,7 +156,7 @@ ImageExists(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
   return (ErrorLevel = 0)
 }
 ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0, maxX:=0, maxY:=0) {
-  WinGetPos, X, Y, W, H
+  WinGetActiveStats, _, W, H, _, _
   image := ImagePath(image)
   maxX := (maxX = 0) ? W : maxX
   maxY := (maxY = 0) ? H : maxY
@@ -351,23 +351,29 @@ ShowPatientSummary() {
 ShowPatientList() {
   ; Patient List via menu
   MouseGetPos X, Y
-  if (WinActive("FirstNet") or (WinActive("Opened by") and ImageSearchAll(_, "firstneticon.png"))) {
-    MouseClick, , 100, 40
-    MouseClick, , 100, 55
-  } else {
-    ImageClick("orcaptlist.png")
-    Sleep, 200
-    ImageSearch, hiliteX, hiliteY, 0, 0, 30, %A_ScreenHeight%, % ImagePath("hilitedrow.png")
-    if (ErrorLevel = 0) {
-      MouseClick, , % hiliteX+40, % hiliteY
-    }
+  ImageClick("orcaptlist.png")
+  Sleep, 200
+  ImageSearch, hiliteX, hiliteY, 0, 0, 30, %A_ScreenHeight%, % ImagePath("hilitedrow.png")
+  if (ErrorLevel = 0) {
+    MouseClick, , % hiliteX+40, % hiliteY
   }
   MouseMove, %X%, %Y%
+}
+ShowEDBoard() {
+  ; Enhanced Tracking via menu
+  if (WinActive("FirstNet") or (WinActive("Opened by") and ImageExists("firstneticon.png"))) {
+    MouseGetPos X, Y
+    MouseClick, , 100, 40
+    MouseClick, , 100, 55
+    MouseMove, %X%, %Y%
+  }
 }
 ShowCores() {
   ; CORES via menu
   MouseGetPos X, Y
   if (isORCA()) {
+    ImageClick("cores.png")
+  } else if (WinActive("FirstNet") or (WinActive("Opened by") and ImageExists("firstneticon.png"))) {
     ImageClick("cores.png")
   } else {
     MouseClick, , 100, 40
@@ -619,6 +625,7 @@ HandleSecondaryKey(key) {
 ^!+m::ShowMAR()
 ^!+s::ShowPatientSummary()
 ^!+p::ShowPatientList()
+^!+b::ShowEDBoard()
 ^!+c::ShowCores()
 ^!+d::ShowDischarge()
 
@@ -658,7 +665,7 @@ Return
 ^?::
 ^/::
   ; Window size and location
-  h := 320
+  h := 340
   w := 500
   titleh := 40
   col2x := w/2 - 10
@@ -689,6 +696,7 @@ Return
   Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
   Gui, Add, Text, xs, I - I/Os  (or Ctrl+Shift+Alt + I)
   Gui, Add, Text, xs, M - MAR Summary  (or Ctrl+Shift+Alt + M)
+  Gui, Add, Text, xs, B - ED Board  (or Ctrl+Shift+Alt + B)
 
   Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
@@ -747,6 +755,8 @@ Return
     ShowMAR()
   } else if (key = "p") {
     ShowPatientList()
+  } else if (key = "b") {
+    ShowEDBoard()
   } else if (key = "c") {
     ShowCores()
   } else if (key = "w") {
