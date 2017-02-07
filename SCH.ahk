@@ -118,9 +118,11 @@ Sonar()
 Shake()
 {
   MouseGetPos X, Y
-  MouseMove, % X+35, % Y+4, 0
-  MouseMove, % X-35, % Y-3, 1
-  MouseMove, % X+15, % Y-3, 2
+  MouseMove, % X+50, % Y+4, 0
+  MouseMove, % X-50, % Y-3, 1
+  MouseMove, % X+25, % Y-3, 1
+  MouseMove, % X-25, % Y+3, 1
+  MouseMove, % X+13, % Y+3, 2
   MouseMove, % X-6, % Y+2, 2
   MouseMove, %X%, %Y%
 }
@@ -653,7 +655,7 @@ ClickRight() {
 ; Less common secondary tasks - activate by Ctrl+K followed by another letter
 ^k::
 ^!+k::
-  Input, key, I L1 T3, {Escape}{LControl}{RControl}{LAlt}{RAlt}{Enter}{Backspace}{Tab}
+  Input, key, I L1 T4, {Escape}{LControl}{RControl}{LAlt}{RAlt}{Enter}{Backspace}{Tab}
   if (ErrorLevel = "Timeout") {
     Shake()
     Return
@@ -662,8 +664,8 @@ ClickRight() {
   HandleSecondaryKey(key)
 Return
 
-^Left::ClickLeft()
-^Right::ClickRight()
+!Left::ClickLeft()
+!Right::ClickRight()
 
 ; CORES popup window only shortcuts
 #If WinActive("CORES")
@@ -714,13 +716,14 @@ Return
   Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
   Gui, Add, Text, xs, I - I/Os  (or Ctrl+Shift+Alt + I)
   Gui, Add, Text, xs, M - MAR Summary  (or Ctrl+Shift+Alt + M)
-  Gui, Add, Text, xs, E - ED Board (FirstNet only) (or Ctrl+Shift+Alt + E)
+  Gui, Add, Text, xs, E - ED Board (FirstNet) (or Ctrl+Shift+Alt + E)
 
   Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
   Gui, Font, w100
   Gui, Add, Text, xs, * - Check all boxes  (or Ctrl+K then *)
-  Gui, Add, Text, xs, 8 - Unheck all boxes  (or Ctrl+K then 8)
+  Gui, Add, Text, xs, 8 - Uncheck all boxes  (or Ctrl+K then 8)
+  Gui, Add, Text, xs, G - Graph  (or Ctrl+K then G)
 
   Gui, Font, w700
   Gui, Add, Text, xs, Orders
@@ -747,10 +750,15 @@ Return
     y := y - 20
   }
 
-  ; Show window and wait for a key
+  ; Show window. Keep up until key pressed or for 3s, regardlness of user activity (e.g. moving mouse).
   Gui, -Caption +AlwaysOntop +Toolwindow +Border
   Gui, Show, x%x% y%y% h%h% w%w% NoActivate, CIS Shortcut Key
-  Input, key, I L1 T5, {Escape}{Space}{LControl}{RControl}{LAlt}{RAlt}{Enter}{Backspace}{Tab}
+  Input, key, I L1 T3, {Escape}{Space}{LControl}{RControl}{LAlt}{RAlt}{Enter}{Backspace}{Tab}
+
+  ; As long as user is inactive, leave help screen up
+  While ((key = "") and (A_TimeIdle > 1000)) {
+    Input, key, I L1 T0.1, {Escape}{Space}{LControl}{RControl}{LAlt}{RAlt}{Enter}{Backspace}{Tab}
+  }
   Gui, Destroy
 
   ; Allow for shortcuts to be launched directly from the help screen
