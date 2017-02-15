@@ -275,11 +275,18 @@ ShowDocuments() {
 ShowOrders() {
   ; Orders via menu
   MouseGetPos X, Y
-  MouseClick, , 190, 40
-  if (isORCA()) {
-    MouseClick, , 190, 415
+  if (ImageExists("ordersselected.png")) {
+    ; If already on orders screen, toggle between orders for signature and orders
+    if (not ImageClick(ImagePath("ordersforsig.png", "*0"))) {
+      ImageClick("ordersorders.png")
+    }
   } else {
-    MouseClick, , 190, 105
+    MouseClick, , 190, 40
+    if (isORCA()) {
+      MouseClick, , 190, 415
+    } else {
+      MouseClick, , 190, 105
+    }
   }
   MouseMove, %X%, %Y%
 }
@@ -580,6 +587,89 @@ SaveCORES() {
   }
   MouseMove, %X%, %Y%
 }
+QuickAddMed() {
+
+  err := "Warning, this feature is still experimental!`n`n"
+  done := false
+  Loop {
+    InputBox, sig, Quick Add Medication, % err . "Med to add (e.g. tyl 140mg PO Q4h PRN pain):", , , 160
+    if (sig = "") {
+      return tyl 140mg po q4h
+    } else if (RegExMatch(sig, "i)([^ ]+)\s+([0-9.]+)\s*([a-zA-Z]+)\s+([a-zA-Z /-]+?)\s+(.+?)(?:\s+(prn ?)(.*))?$", m)) {
+      break
+    } else {
+      err := "Unrecognized med sig: " . sig . "`n`n"
+    }
+  }
+  if (ImageClick("add.png") or ImageClick("add2.png") or ImageClick("add3.png")) {
+    WinWait("Add Order", 2)
+    SendPlay, % m1
+    if (not WinWait("Order Sentences", 10)) {
+      Shake()
+      return
+    }
+
+    Sleep, 75
+    ImageClick("mednonesig.png")
+    Click 2
+    WinWait("Add Order")
+    SendPlay, !d
+    WinWait("Opened by")
+    SendPlay, % m2
+    ImageClick("medunit.png")
+    SendPlay, % m3
+
+    Sleep, 75
+    ImageClick("medroute.png")
+    if (m4 = "PO") {
+      SendPlay, PO or
+    } else if (m4 = "NG") {
+      SendPlay, by NG
+    } else if (m4 = "ND") {
+      SendPlay, by ND
+    } else if (m4 = "GT") {
+      SendPlay, by G-
+    } else {
+      SendPlay, % m4
+    }
+
+    Sleep, 75
+    ImageClick("medfreq.png")
+    if (m5 = "QD") {
+      SendPlay, once a day     
+    } else if (m5 = "BID") {
+      SendPlay, 2 times a day
+    } else if (m5 = "TID") {
+      SendPlay, 3 times a day
+    } else if (m5 = "qwk" or m5 = "qweek") {
+      SendPlay, every week
+    } else if (m5 = "qTuF" or m5 = "qMTh") {
+      SendPlay, % "2 times a week (" . substr(m5, 2)
+    } else if (RegExmatch(m5, "i)q\s*([0-9]+)\s*(h|m)", freq)) {
+      SendPlay, % "q " . freq1 . " " . freq2
+    } else if (RegExmatch(m5, "i)q([0-9a-zA-Z]+)", freq)) {
+      SendPlay, % "q " . freq1
+    } else {
+      SendPlay, % m5
+    }
+    
+    if (m6 != "") {
+      Sleep, 75
+      ImageClick("medprn.png")
+      SendPlay, y
+      ImageClick("medprnreason.png")
+      SendPlay, other
+      ImageClick("medinstructions.png")     
+      SendPlay, % m7
+    }
+
+    Sleep, 75
+    ImageClick("medstart.png")
+    
+    Sonar()
+    return
+  }
+}
 
 ; -----------------------------------------------------------------------------
 ; Shortcut keys
@@ -591,6 +681,8 @@ HandleSecondaryKey(key) {
     ToggleAllOrders() 
   } else if (key = "d") {
     ClickAdd()
+  } else if (key = "q") {
+    QuickAddMed()
   } else if (key = "m") {
     ClickModify()
   } else if (key = "g") {
