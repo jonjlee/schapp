@@ -602,7 +602,12 @@ QuickAddMed() {
     }
   }
   if (ImageClick("add.png") or ImageClick("add2.png") or ImageClick("add3.png")) {
-    WinWait("Add Order", 2)
+    if (not WinWait("Add Order", 5)) {
+      Shake()
+      return
+    }
+    
+    Sleep, 75
     SendPlay, % m1
     if (not WinWait("Order Sentences", 10)) {
       Shake()
@@ -616,6 +621,8 @@ QuickAddMed() {
     SendPlay, !d
     WinWait("Opened by")
     SendPlay, % m2
+
+    Sleep, 75
     ImageClick("medunit.png")
     SendPlay, % m3
 
@@ -777,7 +784,7 @@ Return
 ^?::
 ^/::
   ; Window size and location
-  h := 340
+  h := 360
   w := 500
   titleh := 40
   col2x := w/2 - 10
@@ -821,6 +828,7 @@ Return
   Gui, Add, Text, xs, Orders
   Gui, Font, w100
   Gui, Add, Text, xs, D - Add Order or Note  (or Ctrl+K then D)
+  Gui, Add, Text, xs, Q - Quick Add Medication  (or Ctrl+K then Q)
   Gui, Add, Text, xs, A - Toggle All / Active Orders  (or Ctrl+K then A)
 
   Gui, Font, w700
