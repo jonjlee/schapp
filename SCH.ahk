@@ -35,6 +35,14 @@ Loop {
 }
 Gui, Destroy
 
+; Notification window
+notify_w := 200
+notify_x := A_ScreenWidth - notify_w - 25
+notify_y := A_ScreenHeight - 100
+Gui, Notify:Font, s12
+Gui, Notify:Add, Text, x0 y10 w%notify_w% center, Internet connected
+Gui, Notify:-Caption +alwaysontop +Toolwindow +Border
+
 ; Calculator window -  combobox to type in and OK button (activated by enter)
 CalcFunctions =
 ( LTRIM
@@ -125,6 +133,13 @@ Shake()
   MouseMove, % X+13, % Y+3, 2
   MouseMove, % X-6, % Y+2, 2
   MouseMove, %X%, %Y%
+}
+Notify(msg, sec:=3) {
+  if (msg = "") {
+    Gui, Notify:Show, Hide
+  } else {
+    Gui, Notify:Show, x%msg_x% y%msg_y% w%msg_w% NoActivate,
+  }
 }
 Log(event) {
   FormatTime, T, , yyyy-MM-dd HH:mm:ss
@@ -582,7 +597,7 @@ ClickGraph() {
 }
 SaveCORES() {
   MouseGetPos X, Y
-  if (not ImageClick(ImagePath("coressave.png", "*100"))) {
+  if (not ImageClick(ImagePath("coressave.png"))) {
     Shake()
   }
   MouseMove, %X%, %Y%
@@ -592,90 +607,72 @@ QuickAddMed() {
   err := "Warning, this feature is still experimental!`n`n"
   done := false
   Loop {
-    InputBox, sig, Quick Add Medication, % err . "Med to add (e.g. tyl 140mg PO Q4h PRN pain):", , , 160
+    InputBox, sig, Quick Med Sig, % err . "Sig to use (e.g. 140mg PO Q4h PRN pain):", , , 160
     if (sig = "") {
       return tyl 140mg po q4h
-    } else if (RegExMatch(sig, "i)([^ ]+)\s+([0-9.]+)\s*([a-zA-Z]+)\s+([a-zA-Z /-]+?)\s+(.+?)(?:\s+(prn ?)(.*))?$", m)) {
+    } else if (RegExMatch(sig, "i)([0-9.]+)\s*([a-zA-Z]+)\s+([a-zA-Z /-]+?)\s+(.+?)(?:\s+(prn ?)(.*))?$", m)) {
       break
     } else {
       err := "Unrecognized med sig: " . sig . "`n`n"
     }
   }
-  if (ImageClick("add.png") or ImageClick("add2.png") or ImageClick("add3.png")) {
-    if (not WinWait("Add Order", 5)) {
-      Shake()
-      return
-    }
-    
-    Sleep, 75
-    SendPlay, % m1
-    if (not WinWait("Order Sentences", 10)) {
-      Shake()
-      return
-    }
 
-    Sleep, 75
-    ImageClick("mednonesig.png")
-    Click 2
-    WinWait("Add Order")
-    SendPlay, !d
-    WinWait("Opened by")
-    SendPlay, % m2
+  ImageClick("meddose.png")
+  SendPlay, % m1
 
-    Sleep, 75
-    ImageClick("medunit.png")
+  Sleep, 75
+  ImageClick("medunit.png")
+  SendPlay, % m2
+
+  Sleep, 75
+  ImageClick("medroute.png")
+  if (m3 = "PO" or m3 = "NG") {
+    SendPlay, PO or
+  } else if (m3 = "ND") {
+    SendPlay, by ND
+  } else if (m3 = "GT") {
+    SendPlay, by G-{up}
+  } else {
     SendPlay, % m3
-
-    Sleep, 75
-    ImageClick("medroute.png")
-    if (m4 = "PO") {
-      SendPlay, PO or
-    } else if (m4 = "NG") {
-      SendPlay, by NG
-    } else if (m4 = "ND") {
-      SendPlay, by ND
-    } else if (m4 = "GT") {
-      SendPlay, by G-
-    } else {
-      SendPlay, % m4
-    }
-
-    Sleep, 75
-    ImageClick("medfreq.png")
-    if (m5 = "QD") {
-      SendPlay, once a day     
-    } else if (m5 = "BID") {
-      SendPlay, 2 times a day
-    } else if (m5 = "TID") {
-      SendPlay, 3 times a day
-    } else if (m5 = "qwk" or m5 = "qweek") {
-      SendPlay, every week
-    } else if (m5 = "qTuF" or m5 = "qMTh") {
-      SendPlay, % "2 times a week (" . substr(m5, 2)
-    } else if (RegExmatch(m5, "i)q\s*([0-9]+)\s*(h|m)", freq)) {
-      SendPlay, % "q " . freq1 . " " . freq2
-    } else if (RegExmatch(m5, "i)q([0-9a-zA-Z]+)", freq)) {
-      SendPlay, % "q " . freq1
-    } else {
-      SendPlay, % m5
-    }
-    
-    if (m6 != "") {
-      Sleep, 75
-      ImageClick("medprn.png")
-      SendPlay, y
-      ImageClick("medprnreason.png")
-      SendPlay, other
-      ImageClick("medinstructions.png")     
-      SendPlay, % m7
-    }
-
-    Sleep, 75
-    ImageClick("medstart.png")
-    
-    Sonar()
-    return
   }
+
+  Sleep, 75
+  ImageClick("medfreq.png")
+  if (m4 = "QD") {
+    SendPlay, once a day     
+  } else if (m4 = "BID") {
+    SendPlay, 2 times a day{up}
+  } else if (m4 = "TID") {
+    SendPlay, 3 times a day
+  } else if (m4 = "qwk" or m4 = "qweek") {
+    SendPlay, every week
+  } else if (m4 = "qTuF" or m4 = "qMTh") {
+    SendPlay, % "2 times a week (" . substr(m4, 2)
+  } else if (RegExmatch(m4, "i)q\s*([0-9]+)\s*(h|m)", freq)) {
+    SendPlay, % "q " . freq1 . " " . freq2
+  } else if (RegExmatch(m4, "i)q([0-9a-zA-Z]+)", freq)) {
+    SendPlay, % "q " . freq1
+  } else {
+    SendPlay, % m4
+  }
+  
+  if (m5 != "") {
+    Sleep, 75
+    ImageClick("medprn.png")
+    SendPlay, y
+    Sleep, 75
+    ImageClick("medprnreason.png")
+    SendPlay, other
+    Sleep, 75
+    ImageClick("medinstructions.png")     
+    SendPlay, % m6
+  }
+
+  Sleep, 75
+  ImageClick("medstart.png")
+  
+  Sonar()
+  return
 }
 
 ; -----------------------------------------------------------------------------
@@ -784,7 +781,7 @@ Return
 ^?::
 ^/::
   ; Window size and location
-  h := 360
+  h := 340
   w := 500
   titleh := 40
   col2x := w/2 - 10
@@ -828,7 +825,6 @@ Return
   Gui, Add, Text, xs, Orders
   Gui, Font, w100
   Gui, Add, Text, xs, D - Add Order or Note  (or Ctrl+K then D)
-  Gui, Add, Text, xs, Q - Quick Add Medication  (or Ctrl+K then Q)
   Gui, Add, Text, xs, A - Toggle All / Active Orders  (or Ctrl+K then A)
 
   Gui, Font, w700
