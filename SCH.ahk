@@ -7,7 +7,7 @@
 ; ---------------------------------------------------------
 ; Configuration
 ; ---------------------------------------------------------
-SetTitleMatchMode 2
+SetTitleMatchMode RegEx
 SetDefaultMouseSpeed, 0
 AHKExe := A_Temp . "\AutoHotKey.exe"
 FileInstall, AutoHotKey.exe, % AHKExe, 1
@@ -471,7 +471,7 @@ MarkClipboardRead() {
   }
 
   ; Wait for results popup to disappear and main window to reactivate
-  WinWait("PowerChart")
+  WinWait("PowerChart|FirstNet")
   Sleep, 100
   ImageClick("refresh.png")
 }
@@ -521,7 +521,7 @@ MarkAllClipboardsRead() {
       ImageClick("exit2.png")
     }
 
-    if (not WinWait("PowerChart")) {
+    if (not WinWait("PowerChart|FirstNet")) {
       Shake()
       Return
     }
@@ -729,24 +729,24 @@ ClickRight() {
 #If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet") or WinActive("Document Viewer") or WinActive("Diagnosis List") or WinActive("Medication Reconciliation") or WinActive("Summary of Visit") or WinActive("ED Callback"))
 
 ; Main tasks
-^!+n::ShowNotes()
-^!+u::ShowDocuments()
-^!+o::ShowOrders()
-^!+v::ShowVitals()
-^!+l::ShowLabs()
-^!+i::ShowIView()
-^!+m::ShowMAR()
-^!+s::ShowPatientSummary()
-^!+p::ShowPatientList()
-^!+e::ShowEDBoard()
-^!+c::ShowCores()
-^!+d::ShowDischarge()
+^n::ShowNotes()
+^u::ShowDocuments()
+^o::ShowOrders()
+^+v::ShowVitals()
+^l::ShowLabs()
+^i::ShowIView()
+^m::ShowMAR()
+^s::ShowPatientSummary()
+^p::ShowPatientList()
+^e::ShowEDBoard()
+^+c::ShowCores()
+^d::ShowDischarge()
 
 ; Common secondary tasks - Ctrl+Shift+letter
-^!+w::CloseChart()
 ^+w::CloseChart()
-^!+r::Refresh()
+^w::CloseChart()
 ^+r::Refresh()
+^r::Refresh()
 
 ; Less common secondary tasks - activate by Ctrl+K followed by another letter
 ^k::
@@ -773,7 +773,7 @@ Return
 #If
 
 ; Logout
-^!+Backspace::
+^Backspace::
   Run, C:\Windows\System32\Disconnect.exe
 Return
 
@@ -796,23 +796,23 @@ Return
   Gui, Font, w700
   Gui, Add, Text, Section x10 y%titleh%, Common Actions
   Gui, Font, w100
-  Gui, Add, Text, xs, R - Refresh  (or Ctrl+Shift + R)
-  Gui, Add, Text, xs, W - Close Chart  (or Ctrl+Shift + W)
+  Gui, Add, Text, xs, R - Refresh  (or Ctrl + R)
+  Gui, Add, Text, xs, W - Close Chart  (or Ctrl + W)
 
   Gui, Font, w700
   Gui, Add, Text, xs, Patient Screens
   Gui, Font, w100
-  Gui, Add, Text, xs, C - CORES  (or Ctrl+Shift+Alt + C)
-  Gui, Add, Text, xs, P - Patient List  (or Ctrl+Shift+Alt + P)
-  Gui, Add, Text, xs, S - Patient Summary  (or Ctrl+Shift+Alt + S)
-  Gui, Add, Text, xs, O - Orders  (or Ctrl+Shift+Alt + O)
-  Gui, Add, Text, xs, V - Vitals  (or Ctrl+Shift+Alt + V)
-  Gui, Add, Text, xs, L - Labs  (or Ctrl+Shift+Alt + L)
-  Gui, Add, Text, xs, U - Documents  (or Ctrl+Shift+Alt + U)
-  Gui, Add, Text, xs, N - Notes  (or Ctrl+Shift+Alt + N)
-  Gui, Add, Text, xs, I - I/Os  (or Ctrl+Shift+Alt + I)
-  Gui, Add, Text, xs, M - MAR Summary  (or Ctrl+Shift+Alt + M)
-  Gui, Add, Text, xs, E - ED Board (FirstNet) (or Ctrl+Shift+Alt + E)
+  Gui, Add, Text, xs, C - CORES  (or Ctrl+Shift + C)
+  Gui, Add, Text, xs, P - Patient List  (or Ctrl + P)
+  Gui, Add, Text, xs, S - Patient Summary  (or Ctrl + S)
+  Gui, Add, Text, xs, O - Orders  (or Ctrl + O)
+  Gui, Add, Text, xs, V - Vitals  (or Ctrl+Shift + V)
+  Gui, Add, Text, xs, L - Labs  (or Ctrl + L)
+  Gui, Add, Text, xs, U - Documents  (or Ctrl + U)
+  Gui, Add, Text, xs, N - Notes  (or Ctrl + N)
+  Gui, Add, Text, xs, I - I/Os  (or Ctrl + I)
+  Gui, Add, Text, xs, M - MAR Summary  (or Ctrl + M)
+  Gui, Add, Text, xs, E - ED Board (FirstNet) (or Ctrl + E)
 
   Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
@@ -838,7 +838,7 @@ Return
   Gui, Add, Text, xs, Other
   Gui, Font, w100
   Gui, Add, Text, xs, Ctrl + ? - This help screen
-  Gui, Add, Text, xs, Ctrl+Shift+Alt + Backspace - Logout
+  Gui, Add, Text, xs, Ctrl + Backspace - Logout
 
   if (CalcEnabled) {
     Gui, Add, Text, xs, # - Calculator (or Ctrl+Shift+Alt + 3)
