@@ -112,6 +112,8 @@ FileInstall, img\seen.png, img\seen.png, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
 FileInstall, img\vitalsigns.png, img\vitalsigns.png, 1
 FileInstall, img\winclose.png, img\winclose.png, 1
+FileInstall, img\zoomin.png, img\zoomin.png, 1
+FileInstall, img\zoomout.png, img\zoomout.png, 1
 ; Files for calculator installed in implementation below
 
 ; ---------------------------------------------------------
@@ -316,9 +318,12 @@ ShowVitals() {
     MouseClick, , 190, 150
     MouseMove, %X%, %Y%
     if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
-      MouseGetPos X, Y
-      ImageClick("provideroverview.png")
-      MouseMove, %X%, %Y%
+      ImageSearch, imgX, imgY, 0, 0, 1000, 350, % ImagePath("provideroverview.png")
+      if (ErrorLevel = 0) {
+        MouseGetPos X, Y
+        MouseClick, , % imgX, % imgY
+        MouseMove, %X%, %Y%
+      }
     }
   }
 }
@@ -333,9 +338,12 @@ ShowLabs() {
     MouseClick, , 190, 150
     MouseMove, %X%, %Y%
     if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
-      MouseGetPos X, Y
-      ImageClick("labs.png")
-      MouseMove, %X%, %Y%
+      ImageSearch, imgX, imgY, 0, 0, 1000, 350, % ImagePath("labs.png")
+      if (ErrorLevel = 0) {
+        MouseGetPos X, Y
+        MouseClick, , % imgX, % imgY
+        MouseMove, %X%, %Y%
+      }
     }
   }
 }
@@ -597,7 +605,7 @@ ClickGraph() {
 }
 SaveCORES() {
   MouseGetPos X, Y
-  if (not ImageClick(ImagePath("coressave.png"))) {
+  if (not ImageClick("coressave.png")) {
     Shake()
   }
   MouseMove, %X%, %Y%
@@ -709,21 +717,6 @@ HandleSecondaryKey(key) {
     Shake()   ; unrecognized
   }
 }
-ClickLeft() {
-  ; click top left side of screen, i.e. title bar if 2 windows tiled side-by-side
-  CoordMode, Mouse, Screen
-  MouseGetPos X, Y
-  MouseClick, , A_ScreenWidth / 4, 5 
-  MouseMove, %X%, %Y%
-  CoordMode, Mouse, Relative
-}
-ClickRight() {
-  CoordMode, Mouse, Screen
-  MouseGetPos X, Y
-  MouseClick, , A_ScreenWidth * 3/4, 5 
-  MouseMove, %X%, %Y%
-  CoordMode, Mouse, Relative
-}
 
 ; CIS / FirstNet shortcuts - only trigger when active window's title matches 
 #If (WinActive("PowerChart") or WinActive("FirstNet") or WinActive("Opened by") or WinActive("CORES") or WinActive("Flowsheet") or WinActive("Document Viewer") or WinActive("Diagnosis List") or WinActive("Medication Reconciliation") or WinActive("Summary of Visit") or WinActive("ED Callback"))
@@ -736,11 +729,17 @@ ClickRight() {
 ^l::ShowLabs()
 ^i::ShowIView()
 ^m::ShowMAR()
-^s::ShowPatientSummary()
 ^p::ShowPatientList()
 ^e::ShowEDBoard()
 ^+c::ShowCores()
 ^d::ShowDischarge()
+^s::
+  if (WinActive("CORES")) {
+    SaveCORES()
+  } else {
+    ShowPatientSummary()
+  }
+Return
 
 ; Common secondary tasks - Ctrl+Shift+letter
 ^+w::CloseChart()
@@ -759,13 +758,6 @@ ClickRight() {
 
   HandleSecondaryKey(key)
 Return
-
-!Left::ClickLeft()
-!Right::ClickRight()
-
-; CORES popup window only shortcuts
-#If WinActive("CORES")
-^s::SaveCORES()
 
 ; --------------------------------------------------------------------------------
 ; Global shortcut keys (not restricted to certain active windows)
