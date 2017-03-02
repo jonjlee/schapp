@@ -84,8 +84,23 @@ d(indication, kg) {
   dose := "No dosing info"
   if (indication = "AOM" or indication = "highdoseamox") {
     dose := highDoseAmox(kg)
+  } else if (indication = "tyl" or indication = "tylenol" or indication = "acetaminophen") {
+    return weightBasedDose(kg, 12.5, 160/5, 650)
+  } else if (indication = "ibu" or indication = "ibuprofen" or indication = "motrin") {
+    return weightBasedDose(kg, 10, 100/5, 800)
+  } else if (indication = "benadryl" or indication = "diphenhydramine") {
+    return weightBasedDose(kg, 1, 12.5/5, 50)
   }
   return dose
+}
+
+weightBasedDose(kg, mgPerKg, suspConc, maxMg) {
+    maxML = maxMg / suspConc
+    mL := kg * mgPerKg / suspConc
+    mL := Round(Ceil(mL * 2) / 2, 1)
+    mL := (mL > maxML) ? maxML : mL
+    dose := round(mL * suspConc)
+    return dose . "mg (" . mL . "mL) q4h (" . round(dose/kg, 1) . "mg/kg, " . round(suspConc*5, 1) . "mg/5mL)"
 }
 
 highDoseAmox(kg) {

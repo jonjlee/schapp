@@ -8,10 +8,12 @@
 ; Configuration
 ; ---------------------------------------------------------
 SetTitleMatchMode RegEx
+DetectHiddenWindows, On
 SetDefaultMouseSpeed, 0
 AHKExe := A_Temp . "\AutoHotKey.exe"
 FileInstall, AutoHotKey.exe, % AHKExe, 1
 CalcEnabled := FileExist(AHKexe)
+SetTimer, StartBridgeWhenIdle, 20000
 
 ; ---------------------------------------------------------
 ; UI setup
@@ -592,7 +594,7 @@ ClickAdd() {
   }
 }
 ClickModify() {
-  ; Graph button
+  ; Modify button
   if (not ImageClick("modify.png")) {
     Shake()
   }
@@ -610,73 +612,89 @@ SaveCORES() {
   }
   MouseMove, %X%, %Y%
 }
-QuickAddMed() {
+QuickSig() {
 
-  err := "Warning, this feature is still experimental!`n`n"
+  err := "Warning: this feature is experimental`n`n"
   done := false
   Loop {
     InputBox, sig, Quick Med Sig, % err . "Sig to use (e.g. 140mg PO Q4h PRN pain):", , , 160
     if (sig = "") {
       return tyl 140mg po q4h
     } else if (RegExMatch(sig, "i)([0-9.]+)\s*([a-zA-Z]+)\s+([a-zA-Z /-]+?)\s+(.+?)(?:\s+(prn ?)(.*))?$", m)) {
+      dose := m1, unit := m2, route := m3, freq := m4, prn := m5, inst := m6
       break
     } else {
       err := "Unrecognized med sig: " . sig . "`n`n"
     }
   }
 
-  ImageClick("meddose.png")
-  SendPlay, % m1
-
-  Sleep, 75
-  ImageClick("medunit.png")
-  SendPlay, % m2
-
-  Sleep, 75
-  ImageClick("medroute.png")
-  if (m3 = "PO" or m3 = "NG") {
-    SendPlay, PO or
-  } else if (m3 = "ND") {
-    SendPlay, by ND
-  } else if (m3 = "GT") {
-    SendPlay, by G-{up}
-  } else {
-    SendPlay, % m3
+  if (ImageClick("meddose.png")) {
+    Sleep, 100
+    SendPlay, % dose
   }
+    
 
-  Sleep, 75
-  ImageClick("medfreq.png")
-  if (m4 = "QD") {
-    SendPlay, once a day     
-  } else if (m4 = "BID") {
-    SendPlay, 2 times a day{up}
-  } else if (m4 = "TID") {
-    SendPlay, 3 times a day
-  } else if (m4 = "qwk" or m4 = "qweek") {
-    SendPlay, every week
-  } else if (m4 = "qTuF" or m4 = "qMTh") {
-    SendPlay, % "2 times a week (" . substr(m4, 2)
-  } else if (RegExmatch(m4, "i)q\s*([0-9]+)\s*(h|m)", freq)) {
-    SendPlay, % "q " . freq1 . " " . freq2
-  } else if (RegExmatch(m4, "i)q([0-9a-zA-Z]+)", freq)) {
-    SendPlay, % "q " . freq1
-  } else {
-    SendPlay, % m4
+  Sleep, 100
+  if (ImageClick("medunit.png")) {
+    Sleep, 100
+    SendPlay, % unit
   }
   
-  if (m5 != "") {
-    Sleep, 75
-    ImageClick("medprn.png")
-    SendPlay, y
-    Sleep, 75
-    ImageClick("medprnreason.png")
-    SendPlay, other
-    Sleep, 75
-    ImageClick("medinstructions.png")     
-    SendPlay, % m6
+  Sleep, 100
+  if (ImageClick("medroute.png")) {
+    Sleep, 100
+    if (route = "PO" or route = "NG") {
+      SendPlay, PO or
+    } else if (route = "ND") {
+      SendPlay, by ND
+    } else if (route = "GT") {
+      SendPlay, by G-{up}
+    } else {
+      SendPlay, % route
+    }
+  }
+  
+  Sleep, 100
+  if (ImageClick("medfreq.png")) {
+    Sleep, 100
+    if (freq = "QD") {
+      SendPlay, once a day     
+    } else if (freq = "BID") {
+      SendPlay, 2 times a day{up}
+    } else if (freq = "TID") {
+      SendPlay, 3 times a day
+    } else if (freq = "qwk" or freq = "qweek") {
+      SendPlay, every week
+    } else if (freq = "qTuF" or freq = "qMTh") {
+      SendPlay, % "2 times a week (" . substr(freq, 2)
+    } else if (RegExmatch(freq, "i)q\s*([0-9]+)\s*(h|m)", freq)) {
+      SendPlay, % "q " . freq1 . " " . freq2
+    } else if (RegExmatch(freq, "i)q([0-9a-zA-Z]+)", freq)) {
+      SendPlay, % "q " . freq1
+    } else {
+      SendPlay, % freq
+    }
+  }
+  
+  if (prn != "") {
+    Sleep, 100
+    if (ImageClick("medprn.png")) {
+      Sleep, 100
+      SendPlay, y
+    }
+    Sleep, 100
+    if (ImageClick("medprnreason.png")) {
+      Sleep, 100
+      SendPlay, other
+    }
+    Sleep, 100
+    if (ImageClick("medinstructions.png")) {
+      Sleep, 100
+      SendPlay, % inst
+    }
   }
 
-  Sleep, 75
+  Sleep, 100
   ImageClick("medstart.png")
   
   Sonar()
@@ -694,13 +712,11 @@ HandleSecondaryKey(key) {
   } else if (key = "d") {
     ClickAdd()
   } else if (key = "q") {
-    QuickAddMed()
+    QuickSig()
   } else if (key = "m") {
     ClickModify()
   } else if (key = "g") {
     ClickGraph()
-  } else if (key = "s") {
-    ShowActiveOrders()
   } else if (key = "n" or key = "x") {
     OpenNextClipboard()
   } else if (key = "r") {
@@ -733,13 +749,7 @@ HandleSecondaryKey(key) {
 ^e::ShowEDBoard()
 ^+c::ShowCores()
 ^d::ShowDischarge()
-^s::
-  if (WinActive("CORES")) {
-    SaveCORES()
-  } else {
-    ShowPatientSummary()
-  }
-Return
+^+s::ShowPatientSummary()
 
 ; Common secondary tasks - Ctrl+Shift+letter
 ^+w::CloseChart()
@@ -758,6 +768,10 @@ Return
 
   HandleSecondaryKey(key)
 Return
+
+; Shortcuts for CORES only
+#if (WinActive("CORES"))
+^s::SaveCORES()    
 
 ; --------------------------------------------------------------------------------
 ; Global shortcut keys (not restricted to certain active windows)
@@ -796,7 +810,7 @@ Return
   Gui, Font, w100
   Gui, Add, Text, xs, C - CORES  (or Ctrl+Shift + C)
   Gui, Add, Text, xs, P - Patient List  (or Ctrl + P)
-  Gui, Add, Text, xs, S - Patient Summary  (or Ctrl + S)
+  Gui, Add, Text, xs, S - Patient Summary  (or Ctrl+Shift + S)
   Gui, Add, Text, xs, O - Orders  (or Ctrl + O)
   Gui, Add, Text, xs, V - Vitals  (or Ctrl+Shift + V)
   Gui, Add, Text, xs, L - Labs  (or Ctrl + L)
@@ -941,16 +955,32 @@ Return
 ; ---------------------------------------------------
 ; Tray menu handlers
 ; ---------------------------------------------------
+StartBridgeWhenIdle:
+  if (WinExist("schbridge")) {
+    ; If already started, don't need to relaunch, so stop timer
+    SetTimer, StartBridgeWhenIdle, Off
+  } else if (A_TimeIdle > 240000) {
+    ; Autostart after 4 minute idle
+    Goto, StartBridge
+  }
+Return
+
 StartBridge:
+  ; Only try to launch the bridge once automatically
+  SetTimer, StartBridgeWhenIdle, Off
+
   FileInstall, schbridge.exe, o:\schbridge.exe, 1
   Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
   if (ImageWait("networkdrive.png", 10)) {
     MouseGetPos X, Y
-    ImageClick("networkdrive.png")
-    Sleep, 500
-    SendInput, O:\schbridge.exe{enter}
-    Sleep, 100
-    ImageClick("winclose.png")
-    MouseMove, %X%, %Y%
+    if (ImageClick("networkdrive.png")) {
+      Sleep, 800
+      SendInput, O:\schbridge.exe{enter}
+      Sleep, 350
+      ImageClick("winclose.png")
+      MouseMove, %X%, %Y%
+      Return
+    }
   }
+  Shake()
 Return
