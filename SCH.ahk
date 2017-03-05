@@ -88,7 +88,10 @@ FileInstall, img\checked.PNG, img\checked.PNG, 1
 FileInstall, img\clipboard.png, img\clipboard.png, 1
 FileInstall, img\close.png, img\close.png, 1
 FileInstall, img\cores.png, img\cores.png, 1
+FileInstall, img\coresactiveissues.png, img\coresactiveissues.png, 1
 FileInstall, img\coresexit.png, img\coresexit.png, 1
+FileInstall, img\coresnotes.png, img\coresnotes.png, 1
+FileInstall, img\coresplan.png, img\coresplan.png, 1
 FileInstall, img\coressave.png, img\coressave.png, 1
 FileInstall, img\discharge.png, img\discharge.png, 1
 FileInstall, img\dropdown.png, img\dropdown.png, 1
@@ -99,6 +102,16 @@ FileInstall, img\flowsheetseeker.png, img\flowsheetseeker.png, 1
 FileInstall, img\graph.png, img\graph.png, 1
 FileInstall, img\hilitedrow.png, img\hilitedrow.png, 1
 FileInstall, img\labs.png, img\labs.png, 1
+FileInstall, img\meddose.png, img\meddose.png, 1
+FileInstall, img\medfreq.png, img\medfreq.png, 1
+FileInstall, img\medinstructions.png, img\medinstructions.png, 1
+FileInstall, img\mednonesig.png, img\mednonesig.png, 1
+FileInstall, img\medprn.png, img\medprn.png, 1
+FileInstall, img\medprnother.png, img\medprnother.png, 1
+FileInstall, img\medprnreason.png, img\medprnreason.png, 1
+FileInstall, img\medroute.png, img\medroute.png, 1
+FileInstall, img\medstart.png, img\medstart.png, 1
+FileInstall, img\medunit.png, img\medunit.png, 1
 FileInstall, img\modify.png, img\modify.png, 1
 FileInstall, img\navigator.png, img\navigator.png, 1
 FileInstall, img\networkdrive.png, img\networkdrive.png, 1
@@ -107,6 +120,9 @@ FileInstall, img\orcaptlist.png, img\orcaptlist.png, 1
 FileInstall, img\ordersactive.png, img\ordersactive.png, 1
 FileInstall, img\ordersall.png, img\ordersall.png, 1
 FileInstall, img\ordersallsel.png, img\ordersallsel.png, 1
+FileInstall, img\ordersforsig.png, img\ordersforsig.png, 1
+FileInstall, img\ordersorders.png, img\ordersorders.png, 1
+FileInstall, img\ordersselected.png, img\ordersselected.png, 1
 FileInstall, img\primaryres.png, img\primaryres.png, 1
 FileInstall, img\provideroverview.png, img\provideroverview.png, 1
 FileInstall, img\refresh.png, img\refresh.png, 1
@@ -260,6 +276,21 @@ CursorNotBusyWait(sec:=5) {   ; Not compatible with citrix: A_Cursor = "Unknown"
     }
     Sleep, 300
   }
+}
+CopyAllText() {
+  Clipboard := ""
+  Sleep, 50
+  SendInput, ^a
+  Sleep, 300
+  SendInput, ^c
+  ClipWait, 0.5
+  return Clipboard
+}
+SetClipboard(s) {
+  Clipboard := ""
+  Sleep, 50
+  Clipboard := s
+  ClipWait, 0.5
 }
 
 ; -----------------------------------------------------------------------------
@@ -612,6 +643,109 @@ SaveCORES() {
   }
   MouseMove, %X%, %Y%
 }
+EditCORESinNotepad() {
+  s := ""
+  Clipboard := ""
+  
+  ImageSearch, imgX, imgY, 0, 0, 200, %A_ScreenHeight%, % ImagePath("coresplan.png")
+  if (ErrorLevel != 0) {
+    ImageSearch, imgX, imgY, 0, 0, 200, %A_ScreenHeight%, % ImagePath("coresactiveissues.png")
+  }
+  if (ErrorLevel = 0) {
+    MouseClick, , % imgX, % imgY+45
+    s := CopyAllText()
+  }
+
+  Sleep, 200
+  ImageSearch, imgX, imgY, 0, 0, 900, 700, % ImagePath("coresnotes.png")
+  if (ErrorLevel = 0) {
+    MouseClick, , % imgX, % imgY+45
+    tmp := CopyAllText()
+    s := s . "`r`n`r`n" . tmp
+  }
+  
+  WinActivate, Notepad++
+  if (WinWait("Notepad++", 0.5)) {
+    SendInput, ^n
+  } else {
+    Run, Notepad.exe
+    if (not WinWait("Notepad", 1)) {
+      Shake()
+    }
+  }
+  Sleep, 100
+
+  SetClipboard(s)
+  SendInput, ^v
+  SendInput, ^{home}
+  Sonar()
+}
+SaveNotepadToCORES() {
+  s := CopyAllText()
+  s := StrReplace(s, "`r`n`r`n", "{")
+  paras := StrSplit(s, "{")
+
+  plan := ""
+  planLen := 0
+  notes := ""
+  notesLen := 0
+  Loop % paras.MaxIndex() {
+    ; Count number of chars, giving 10 chars for each encoded newline per what CORES does
+    StrReplace(paras[A_Index], "`n", "", numNewlines)
+    len := StrLen(paras[A_Index]) + 8 * (numNewlines + 2)
+  
+    ; max text field size of 2000, give 100 char buffer
+    if (planLen + len <= 1900) {
+      plan .= (plan = "") ? "" : "`r`n`r`n"
+      plan .= paras[A_Index]
+      planLen += len
+    } else {
+      notes .= (notes = "") ? "" : "`r`n`r`n"
+      notes .= paras[A_Index]
+      notesLen += len
+    }
+  }
+
+  ; Warn if notes will exceed limit
+  if (notesLen > 2000) {
+    TrayTip, WARNING, `nNotes is too long and may be cut off., 10, 2
+  }
+  
+  Clipboard := ""
+  WinActivate, CORES
+  if (WinWait("CORES", 2)) {
+    ImageSearch, imgX, imgY, 0, 0, 200, %A_ScreenHeight%, % ImagePath("coresplan.png")
+    if (ErrorLevel != 0) {
+      ImageSearch, imgX, imgY, 0, 0, 200, %A_ScreenHeight%, % ImagePath("coresactiveissues.png")
+    }
+    if (ErrorLevel = 0) {
+      MouseClick, , % imgX, % imgY+45
+      SendInput, ^a
+
+      Clipboard := plan
+      Sleep, 300
+      ClipWait, 0.5
+      SendInput, ^v
+    }
+
+    Sleep, 200
+    Clipboard := ""
+    ImageSearch, imgX, imgY, 0, 0, 900, 700, % ImagePath("coresnotes.png")
+    if (ErrorLevel = 0) {
+      MouseClick, , % imgX, % imgY+45
+      SendInput, ^a
+
+      Clipboard := notes
+      Sleep, 300
+      ClipWait, 0.5
+      SendInput, ^v
+    }
+    
+    Sonar()
+  } else {
+    Shake()
+  }
+}
 QuickSig() {
 
   err := "Warning: this feature is experimental`n`n"
@@ -619,7 +753,7 @@ QuickSig() {
   Loop {
     InputBox, sig, Quick Med Sig, % err . "Sig to use (e.g. 140mg PO Q4h PRN pain):", , , 160
     if (sig = "") {
-      return tyl 140mg po q4h
+      return
     } else if (RegExMatch(sig, "i)([0-9.]+)\s*([a-zA-Z]+)\s+([a-zA-Z /-]+?)\s+(.+?)(?:\s+(prn ?)(.*))?$", m)) {
       dose := m1, unit := m2, route := m3, freq := m4, prn := m5, inst := m6
       break
@@ -727,6 +861,10 @@ HandleSecondaryKey(key) {
     CheckAllCheckboxes()
   } else if (key = "8") {
     CheckAllCheckboxes(false)
+  } else if (key = "e" and WinActive("CORES")) {
+    EditCORESinNotepad()
+  } else if (key = "e" and WinActive("Notepad")) {
+    SaveNotepadToCORES()
   } else if (key = " ") {
     Click
   } else {
@@ -884,7 +1022,7 @@ Return
     ShowMAR()
   } else if (key = "p") {
     ShowPatientList()
-  } else if (key = "e") {
+  } else if (key = "e" and not WinActive("Notepad") and not WinActive("CORE")) {
     ShowEDBoard()
   } else if (key = "c") {
     ShowCores()
@@ -969,9 +1107,11 @@ StartBridge:
   ; Only try to launch the bridge once automatically
   SetTimer, StartBridgeWhenIdle, Off
 
+  TrayTip, , Starting internet bridge, 30
+
   FileInstall, schbridge.exe, o:\schbridge.exe, 1
   Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
-  if (ImageWait("networkdrive.png", 10)) {
+  if (ImageWait("networkdrive.png", 45)) {
     MouseGetPos X, Y
     if (ImageClick("networkdrive.png")) {
       Sleep, 800
