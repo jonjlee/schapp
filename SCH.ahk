@@ -695,7 +695,7 @@ SaveNotepadToCORES() {
     len := StrLen(paras[A_Index]) + 8 * (numNewlines + 2)
   
     ; max text field size of 2000, give 100 char buffer
-    if (planLen + len <= 1900) {
+    if (notes = "" and (planLen + len <= 1900)) {
       plan .= (plan = "") ? "" : "`r`n`r`n"
       plan .= paras[A_Index]
       planLen += len
