@@ -13,6 +13,7 @@ SetDefaultMouseSpeed, 0
 AHKExe := A_Temp . "\AutoHotKey.exe"
 FileInstall, AutoHotKey.exe, % AHKExe, 1
 CalcEnabled := FileExist(AHKexe)
+BridgeStarted := WinExist("schbridge")
 SetTimer, StartBridgeWhenIdle, 20000
 
 ; ---------------------------------------------------------
@@ -192,7 +193,7 @@ ImageExists(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
   ImageSearch, X, Y, %minX%, %minY%, %maxX%, %maxY%, %image%
   return (ErrorLevel = 0)
 }
-ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:=0, maxX:=0, maxY:=0) {
+ImageSearchAll(ByRef Arr, image, max:=0, minX:=0, minY:=0, maxX:=0, maxY:=0, orientation:="Vertical") {
   WinGetActiveStats, _, W, H, _, _
   image := ImagePath(image)
   maxX := (maxX = 0) ? W : maxX
@@ -219,10 +220,10 @@ ImageSearchAll(ByRef Arr, image, orientation:="Vertical", max:=0, minX:=0, minY:
   }
   return (Arr.length() > 0)
 }
-ImageClick(image, n:=1, orientation:="Vertical", minX:=0, minY:=0, maxX:=0, maxY:=0) {
-  ImageSearchAll(images, image, orientation, n, minX, minY, maxX, maxY)
+ImageClick(image, n:=1, minX:=0, minY:=0, maxX:=0, maxY:=0, offsetX:=0, offsetY:=0, orientation:="Vertical") {
+  ImageSearchAll(images, image, n, minX, minY, maxX, maxY, orientation)
   if (images.MaxIndex() >= n) {
-    MouseClick, , % images[n][1], % images[n][2]
+    MouseClick, , % images[n][1] + offsetX, % images[n][2] + offsetY
     return true   
   }
   return false
@@ -308,7 +309,7 @@ ShowNotes() {
     MouseClick, , 190, 260
     MouseMove, %X%, %Y%
   } else {
-    MouseClick, , 190, 235
+    MouseClick, , 190, 260
     MouseMove, 250, 360
   }  
 }
@@ -318,7 +319,7 @@ ShowDocuments() {
   if (isORCA()) {
     MouseClick, , 190, 245
   } else {
-    MouseClick, , 190, 210
+    MouseClick, , 190, 235
   }
   MouseMove, 240, 290
 }
@@ -348,15 +349,12 @@ ShowVitals() {
     MouseClick, , 190, 790
     MouseMove, %X%, %Y%
   } else {
-    MouseClick, , 190, 150
+    MouseClick, , 190, 175
     MouseMove, %X%, %Y%
     if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
-      ImageSearch, imgX, imgY, 0, 0, 1000, 350, % ImagePath("provideroverview.png")
-      if (ErrorLevel = 0) {
-        MouseGetPos X, Y
-        MouseClick, , % imgX, % imgY
-        MouseMove, %X%, %Y%
-      }
+      MouseGetPos X, Y
+      ImageClick("provideroverview.png", , 0, 0, 1000, 350)
+      MouseMove, %X%, %Y%
     }
   }
 }
@@ -368,15 +366,12 @@ ShowLabs() {
     MouseClick, , 190, 855
     MouseMove, %X%, %Y%
   } else {
-    MouseClick, , 190, 150
+    MouseClick, , 190, 175
     MouseMove, %X%, %Y%
     if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
-      ImageSearch, imgX, imgY, 0, 0, 1000, 350, % ImagePath("labs.png")
-      if (ErrorLevel = 0) {
-        MouseGetPos X, Y
-        MouseClick, , % imgX, % imgY
-        MouseMove, %X%, %Y%
-      }
+      MouseGetPos X, Y
+      ImageClick("labs.png", , 0, 0, 1000, 350)
+      MouseMove, %X%, %Y%
     }
   }
 }
@@ -387,7 +382,7 @@ ShowIView() {
   if (isORCA()) {
     MouseClick, , 190, 525
   } else {
-    MouseClick, , 190, 285
+    MouseClick, , 190, 310
   }
   MouseMove, %X%, %Y%
 }
@@ -398,7 +393,7 @@ ShowMAR() {
   if (isORCA()) {
     MouseClick, , 190, 460
   } else {
-    MouseClick, , 190, 310
+    MouseClick, , 190, 335
   }
   MouseMove, %X%, %Y%
 }
@@ -418,10 +413,7 @@ ShowPatientList() {
   MouseGetPos X, Y
   ImageClick("orcaptlist.png")
   Sleep, 200
-  ImageSearch, hiliteX, hiliteY, 0, 0, 30, %A_ScreenHeight%, % ImagePath("hilitedrow.png")
-  if (ErrorLevel = 0) {
-    MouseClick, , % hiliteX+40, % hiliteY
-  }
+  ImageClick("hilitedrow.png", , , , 30, , 40) 
   MouseMove, %X%, %Y%
 }
 ShowEDBoard() {
@@ -536,9 +528,7 @@ MarkAllClipboardsRead() {
     }
 
     ; Click "Primary resident" if there is a popup
-    ImageSearch, X, Y, 0, 0, %A_ScreenWidth%, %A_ScreenHeight%, *20 %A_ScriptDir%\img\primaryres.png
-    if (ErrorLevel = 0) {
-      ImageClick("primaryres.png")
+    if (ImageClick("primaryres.png")) {
       Click 2
       Sleep, 300
     }
@@ -579,7 +569,7 @@ CheckAllCheckboxes(check:=true) {
   }
 
   ; select all unchecked boxes on screen
-  ImageSearchAll(checkboxes, img, , , 250)
+  ImageSearchAll(checkboxes, img, , 250)
   for i, checkbox in checkboxes {
     MouseClick, , % checkbox[1], % checkbox[2]
     if (A_TimeIdlePhysical < 100) {
@@ -647,21 +637,14 @@ EditCORESinNotepad() {
   s := ""
   Clipboard := ""
   
-  ImageSearch, imgX, imgY, 0, 0, 200, %A_ScreenHeight%, % ImagePath("coresplan.png")
-  if (ErrorLevel != 0) {
-    ImageSearch, imgX, imgY, 0, 0, 200, %A_ScreenHeight%, % ImagePath("coresactiveissues.png")
-  }
-  if (ErrorLevel = 0) {
-    MouseClick, , % imgX, % imgY+45
+  if (ImageClick("coresplan.png", , , , 200, , 10, 45) or ImageClick("coresactiveissues.png", , , , 200, , 10, 45)) {
     s := CopyAllText()
   }
 
   Sleep, 200
-  ImageSearch, imgX, imgY, 0, 0, 900, 700, % ImagePath("coresnotes.png")
-  if (ErrorLevel = 0) {
-    MouseClick, , % imgX, % imgY+45
-    tmp := CopyAllText()
-    s := s . "`r`n`r`n" . tmp
+  if (ImageClick("coresnotes.png", , , , 900, , 10, 45)) {
+    t := CopyAllText()
+    s := s . "`r`n`r`n" . t
   }
   
   WinActivate, Notepad++
@@ -706,42 +689,43 @@ SaveNotepadToCORES() {
     }
   }
 
-  ; Warn if notes will exceed limit
-  if (notesLen > 2000) {
-    TrayTip, WARNING, `nNotes is too long and may be cut off., 10, 2
-  }
-  
   Clipboard := ""
+  Sleep, 50
+  
   WinActivate, CORES
   if (WinWait("CORES", 2)) {
-    ImageSearch, imgX, imgY, 0, 0, 200, %A_ScreenHeight%, % ImagePath("coresplan.png")
-    if (ErrorLevel != 0) {
-      ImageSearch, imgX, imgY, 0, 0, 200, %A_ScreenHeight%, % ImagePath("coresactiveissues.png")
+    if (notesLen > 0 and not ImageExists("coresnotes.png")) {
+      plan .= "`r`n`r`n" . notes
+      notes := ""
     }
-    if (ErrorLevel = 0) {
-      MouseClick, , % imgX, % imgY+45
-      SendInput, ^a
 
+    if (ImageClick("coresplan.png", , , , 200, , 10, 45) or ImageClick("coresactiveissues.png", , , , 200, , 10, 45)) {
       Clipboard := plan
-      Sleep, 300
-      ClipWait, 0.5
-      SendInput, ^v
-    }
-
-    Sleep, 200
-    Clipboard := ""
-    ImageSearch, imgX, imgY, 0, 0, 900, 700, % ImagePath("coresnotes.png")
-    if (ErrorLevel = 0) {
-      MouseClick, , % imgX, % imgY+45
       SendInput, ^a
-
-      Clipboard := notes
       Sleep, 300
       ClipWait, 0.5
+
       SendInput, ^v
+      
+      if (notes != "" and ImageClick("coresnotes.png", , , , 900, , 10, 45)) {
+        Sleep, 200
+        Clipboard := ""
+        
+        SendInput, ^a
+        Clipboard := notes
+        Sleep, 300
+        ClipWait, 0.5
+
+        SendInput, ^v
+      } else if (notes != "") {
+        MsgBox, NOTES section copied to clipboard, but couldn't find appropriate input box. Please paste manually.
+        return
+      }
+      
+      Sonar()
+    } else if (plan != "") {
+      MsgBox, PLAN section copied to clipboard, but couldn't find appropriate input box. Please paste manually.
     }
-    
-    Sonar()
   } else {
     Shake()
   }
@@ -861,6 +845,8 @@ HandleSecondaryKey(key) {
     CheckAllCheckboxes()
   } else if (key = "8") {
     CheckAllCheckboxes(false)
+  } else if (key = "s" and WinActive("CORES")) {
+    SaveCORES()
   } else if (key = "e" and WinActive("CORES")) {
     EditCORESinNotepad()
   } else if (key = "e" and WinActive("Notepad")) {
@@ -925,7 +911,7 @@ Return
 ^?::
 ^/::
   ; Window size and location
-  h := 340
+  h := 400
   w := 500
   titleh := 40
   col2x := w/2 - 10
@@ -959,14 +945,13 @@ Return
   Gui, Add, Text, xs, E - ED Board (FirstNet) (or Ctrl + E)
 
   Gui, Font, w700
-  Gui, Add, Text, Section x%col2x% y%titleh%, Vitals
+  Gui, Add, Text, xs, Other
   Gui, Font, w100
-  Gui, Add, Text, xs, * - Check all boxes  (or Ctrl+K then *)
-  Gui, Add, Text, xs, 8 - Uncheck all boxes  (or Ctrl+K then 8)
-  Gui, Add, Text, xs, G - Graph  (or Ctrl+K then G)
+  Gui, Add, Text, xs, Ctrl + ? - This help screen
+  Gui, Add, Text, xs, Ctrl + Backspace - Logout
 
   Gui, Font, w700
-  Gui, Add, Text, xs, Orders
+  Gui, Add, Text, Section x%col2x% y%titleh%, Orders
   Gui, Font, w100
   Gui, Add, Text, xs, D - Add Order or Note  (or Ctrl+K then D)
   Gui, Add, Text, xs, A - Toggle All / Active Orders  (or Ctrl+K then A)
@@ -979,11 +964,22 @@ Return
   Gui, Add, Text, xs, R - Mark flowsheet read  (or Ctrl+K then R)
 
   Gui, Font, w700
-  Gui, Add, Text, xs, Other
+  Gui, Add, Text, xs, Vitals
   Gui, Font, w100
-  Gui, Add, Text, xs, Ctrl + ? - This help screen
-  Gui, Add, Text, xs, Ctrl + Backspace - Logout
+  Gui, Add, Text, xs, * - Check all boxes  (or Ctrl+K then *)
+  Gui, Add, Text, xs, 8 - Uncheck all boxes  (or Ctrl+K then 8)
+  Gui, Add, Text, xs, G - Graph  (or Ctrl+K then G)
 
+  Gui, Font, w700
+  Gui, Add, Text, xs, CORES
+  Gui, Font, w100
+  Gui, Add, Text, xs, % WinActive("Notepad") ? "E - Copy document to CORES" : "E - Edit plan in Notepad"
+  Gui, Add, Text, xs, S - Save  (or Ctrl+S)
+  Gui, Add, Text, xs, W - Save && Exit  (or Ctrl+W)
+
+  Gui, Font, w700
+  Gui, Add, Text, xs, 
+  Gui, Font, w100
   if (CalcEnabled) {
     Gui, Add, Text, xs, # - Calculator (or Ctrl+Shift+Alt + 3)
     h := h + 20
@@ -1094,16 +1090,19 @@ Return
 ; Tray menu handlers
 ; ---------------------------------------------------
 StartBridgeWhenIdle:
-  if (WinExist("schbridge")) {
+  global BridgeStarted
+  if (BridgeStarted or WinExist("schbridge")) {
     ; If already started, don't need to relaunch, so stop timer
     SetTimer, StartBridgeWhenIdle, Off
-  } else if (A_TimeIdle > 240000) {
-    ; Autostart after 4 minute idle
+  } else if (A_TimeIdle > (3 * 60 * 1000)) {
+    ; Autostart after 3 minute idle
     Goto, StartBridge
   }
 Return
 
 StartBridge:
+  global BridgeStarted
+  
   ; Only try to launch the bridge once automatically
   SetTimer, StartBridgeWhenIdle, Off
 
@@ -1113,14 +1112,22 @@ StartBridge:
   Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
   if (ImageWait("networkdrive.png", 45)) {
     MouseGetPos X, Y
-    if (ImageClick("networkdrive.png")) {
-      Sleep, 800
-      SendInput, O:\schbridge.exe{enter}
-      Sleep, 350
-      ImageClick("winclose.png")
-      MouseMove, %X%, %Y%
-      Return
+    if (not ImageClick("networkdrive.png")) {
+      ; If can't click icon, try Alt+D
+      SendInput, !d
     }
+
+    Sleep, 800
+    SendInput, O:\schbridge.exe{enter}
+    Sleep, 350
+    if (not ImageClick("winclose.png")) {
+      ; Try Alt+F4 if unable to click close window button
+      SendInput, !{F4}
+    }
+    MouseMove, %X%, %Y%
+    
+    BridgeStarted := true
+    Return
   }
   Shake()
 Return
