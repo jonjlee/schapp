@@ -26,17 +26,17 @@ Menu, tray, add, Start Internet Bridge, StartBridge
 splash_w := 400
 splash_x := A_ScreenWidth - splash_w - 25
 splash_y := A_ScreenHeight - 100
-Gui, Font, s14
-Gui, Add, Text, x0 y10 w%splash_w% center, CIS shortcuts enabled. Ctrl+? for help.
-Gui, -Caption +alwaysontop +Toolwindow +Border
-Gui, Show, x%splash_x% y%splash_y% w%splash_w% NoActivate,
+Gui, Splash:Font, s14
+Gui, Splash:Add, Text, x0 y10 w%splash_w% center, CIS shortcuts enabled. Ctrl+? for help.
+Gui, Splash:-Caption +alwaysontop +Toolwindow +Border
+Gui, Splash:Show, x%splash_x% y%splash_y% w%splash_w% NoActivate,
 Sleep 100
 Loop {
   If (A_TimeIdlePhysical < 100 or A_TimeIdlePhysical > 2500) {
     break
   }
 }
-Gui, Destroy
+Gui, Splash:Destroy
 
 ; Notification window
 notify_w := 200
@@ -96,6 +96,7 @@ FileInstall, img\coresplan.png, img\coresplan.png, 1
 FileInstall, img\coressave.png, img\coressave.png, 1
 FileInstall, img\discharge.png, img\discharge.png, 1
 FileInstall, img\dropdown.png, img\dropdown.png, 1
+FileInstall, img\edboard.png, img\edboard.png, 1
 FileInstall, img\exit.png, img\exit.png, 1
 FileInstall, img\exit2.png, img\exit2.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
@@ -126,6 +127,15 @@ FileInstall, img\ordersorders.png, img\ordersorders.png, 1
 FileInstall, img\ordersselected.png, img\ordersselected.png, 1
 FileInstall, img\primaryres.png, img\primaryres.png, 1
 FileInstall, img\provideroverview.png, img\provideroverview.png, 1
+FileInstall, img\ptactionsmenu.png, img\ptactionsmenu.png, 1
+FileInstall, img\ptdocuments.png, img\ptdocuments.png, 1
+FileInstall, img\ptflowsheets.png, img\ptflowsheets.png, 1
+FileInstall, img\ptiview.png, img\ptiview.png, 1
+FileInstall, img\ptmarsummary.png, img\ptmarsummary.png, 1
+FileInstall, img\ptmenu.png, img\ptmenu.png, 1
+FileInstall, img\ptnotes.png, img\ptnotes.png, 1
+FileInstall, img\ptorders.png, img\ptorders.png, 1
+FileInstall, img\ptsummary.png, img\ptsummary.png, 1
 FileInstall, img\refresh.png, img\refresh.png, 1
 FileInstall, img\seen.png, img\seen.png, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
@@ -304,24 +314,34 @@ isORCA() {
 ShowNotes() {
   ; Notes via menu
   MouseGetPos X, Y
-  MouseClick, , 190, 40
   if (isORCA()) {
+    MouseClick, , 190, 40
     MouseClick, , 190, 260
     MouseMove, %X%, %Y%
   } else {
-    MouseClick, , 190, 260
-    MouseMove, 250, 360
+    ImageClick("ptmenu.png", , , , 500, 70)
+    if (ImageExists("firstneticon.png") and ImageWait("ptnotes2.png", 1, 70, , 400, 600) and ImageClick("ptnotes2.png")) {
+      MouseMove, 250, 360
+    } else if (ImageWait("ptnotes.png", 1, 70, , 400, 600) and ImageClick("ptnotes.png")) {
+      MouseMove, 250, 360
+    } else {
+      Shake()
+    }
   }  
 }
 ShowDocuments() {
   ; Documents via menu
-  MouseClick, , 190, 40
   if (isORCA()) {
+    MouseClick, , 190, 40
     MouseClick, , 190, 245
   } else {
-    MouseClick, , 190, 235
+    ImageClick("ptmenu.png", , , , 500, 70)
+    if (ImageWait("ptdocuments.png", 1, 70, , 400, 600) and ImageClick("ptdocuments.png")) {
+      MouseMove, 240, 290
+    } else {
+      Shake()
+    }
   }
-  MouseMove, 240, 290
 }
 ShowOrders() {
   ; Orders via menu
@@ -332,11 +352,14 @@ ShowOrders() {
       ImageClick("ordersorders.png")
     }
   } else {
-    MouseClick, , 190, 40
     if (isORCA()) {
+      MouseClick, , 190, 40
       MouseClick, , 190, 415
     } else {
-      MouseClick, , 190, 105
+      ImageClick("ptmenu.png", , , , 500, 70)
+      if (not (ImageWait("ptorders.png", 1, 70, , 400, 600) and ImageClick("ptorders.png"))) {
+        Shake()
+      }
     }
   }
   MouseMove, %X%, %Y%
@@ -344,12 +367,14 @@ ShowOrders() {
 ShowVitals() {
   ; Flowsheets via menu > Provider Overview tab > Vitals Signs in left sided Navigator
   MouseGetPos X, Y
-  MouseClick, , 190, 40
   if (isORCA()) {
+    MouseClick, , 190, 40
     MouseClick, , 190, 790
     MouseMove, %X%, %Y%
   } else {
-    MouseClick, , 190, 175
+    ImageClick("ptmenu.png", , , , 500, 70)
+    Sleep, 100
+    ImageClick("ptflowsheets.png")
     MouseMove, %X%, %Y%
     if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
       MouseGetPos X, Y
@@ -361,12 +386,14 @@ ShowVitals() {
 ShowLabs() {
   ; Flowsheets via menu > Labs tab
   MouseGetPos X, Y
-  MouseClick, , 190, 40
   if (isORCA()) {
+    MouseClick, , 190, 40
     MouseClick, , 190, 855
     MouseMove, %X%, %Y%
   } else {
-    MouseClick, , 190, 175
+    ImageClick("ptmenu.png", , , , 500, 70)
+    Sleep, 100
+    ImageClick("ptflowsheets.png")
     MouseMove, %X%, %Y%
     if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
       MouseGetPos X, Y
@@ -378,33 +405,42 @@ ShowLabs() {
 ShowIView() {
   ; IView and I&O
   MouseGetPos X, Y
-  MouseClick, , 190, 40
   if (isORCA()) {
+    MouseClick, , 190, 40
     MouseClick, , 190, 525
   } else {
-    MouseClick, , 190, 310
+    ImageClick("ptmenu.png", , , , 500, 70)
+    if (not (ImageWait("ptiview.png", 1, 70, , 400, 600) and ImageClick("ptiview.png"))) {
+      Shake()
+    }
   }
   MouseMove, %X%, %Y%
 }
 ShowMAR() {
   ; MAR Summary via menu
   MouseGetPos X, Y
-  MouseClick, , 190, 40
   if (isORCA()) {
+    MouseClick, , 190, 40
     MouseClick, , 190, 460
   } else {
-    MouseClick, , 190, 335
+    ImageClick("ptmenu.png", , , , 500, 70)
+    if (not (ImageWait("ptmarsummary.png", 1, 70, , 400, 600) and ImageClick("ptmarsummary.png"))) {
+      Shake()
+    }
   }
   MouseMove, %X%, %Y%
 }
 ShowPatientSummary() {
   ; Patient Summary via menu
   MouseGetPos X, Y
-  MouseClick, , 190, 40
   if (isORCA()) {
+    MouseClick, , 190, 40
     MouseClick, , 190, 85
   } else {
-    MouseClick, , 190, 65
+    ImageClick("ptmenu.png", , , , 500, 70)
+    if (not (ImageWait("ptsummary.png", 1, 70, , 400, 600) and ImageClick("ptsummary.png"))) {
+      Shake()
+    }
   }
   MouseMove, %X%, %Y%
 }
@@ -420,22 +456,14 @@ ShowEDBoard() {
   ; Enhanced Tracking via menu
   if (WinActive("FirstNet") or (WinActive("Opened by") and ImageExists("firstneticon.png"))) {
     MouseGetPos X, Y
-    MouseClick, , 100, 40
-    MouseClick, , 100, 55
+    ImageClick("edboard.png")
     MouseMove, %X%, %Y%
   }
 }
 ShowCores() {
   ; CORES via menu
   MouseGetPos X, Y
-  if (isORCA()) {
-    ImageClick("cores.png")
-  } else if (WinActive("FirstNet") or (WinActive("Opened by") and ImageExists("firstneticon.png"))) {
-    ImageClick("cores.png")
-  } else {
-    MouseClick, , 100, 40
-    MouseClick, , 100, 220
-  }
+  ImageClick("cores.png")
   MouseMove, %X%, %Y%
 }
 ShowDischarge() {
@@ -445,7 +473,8 @@ ShowDischarge() {
     MouseClick, , 190, 40
     MouseClick, , 190, 615
   } else {
-    MouseClick, , 360, 40
+    ImageClick("ptactionsmenu.png")
+    ;MouseClick, , 360, 40
     if (ImageWaitWhileIdle("discharge.png")) {
       MouseGetPos X, Y
       ImageClick("discharge.png")
@@ -822,7 +851,44 @@ QuickSig() {
 ; -----------------------------------------------------------------------------
 ; Shortcut keys
 ; -----------------------------------------------------------------------------
+HandleHelpKey(key) {
+  ; Handle a key press from the help screen
+  if (key = "") {
+    Return
+  } else if (key = "s") {
+    ShowPatientSummary()
+  } else if (key = "n") {
+    ShowNotes()
+  } else if (key = "o") {
+    ShowOrders()
+  } else if (key = "v") {
+    ShowVitals()
+  } else if (key = "l") {
+    ShowLabs()
+  } else if (key = "u") {
+    ShowDocuments()
+  } else if (key = "i") {
+    ShowIView()
+  } else if (key = "m") {
+    ShowMAR()
+  } else if (key = "p") {
+    ShowPatientList()
+  } else if (key = "e" and not WinActive("Notepad") and not WinActive("CORE")) {
+    ShowEDBoard()
+  } else if (key = "c") {
+    ShowCores()
+  } else if (key = "w") {
+    CloseChart()
+  } else if (key = "r" and not WinActive("Flowsheet")) {
+    Refresh()
+  } else if ((key = "#" or key = "3") and CalcEnabled) {
+    ShowCalculator()
+  } else {
+    HandleSecondaryKey(key)
+  }
+}
 HandleSecondaryKey(key) {
+  ; Handle a key press after Ctrl+K
   if (key = "") {
     return
   } else if (key = "a") {
@@ -998,39 +1064,7 @@ Return
   Gui, Destroy
 
   ; Allow for shortcuts to be launched directly from the help screen
-  if (key = "") {
-    Return
-  } else if (key = "s") {
-    ShowPatientSummary()
-  } else if (key = "n") {
-    ShowNotes()
-  } else if (key = "o") {
-    ShowOrders()
-  } else if (key = "v") {
-    ShowVitals()
-  } else if (key = "l") {
-    ShowLabs()
-  } else if (key = "u") {
-    ShowDocuments()
-  } else if (key = "i") {
-    ShowIView()
-  } else if (key = "m") {
-    ShowMAR()
-  } else if (key = "p") {
-    ShowPatientList()
-  } else if (key = "e" and not WinActive("Notepad") and not WinActive("CORE")) {
-    ShowEDBoard()
-  } else if (key = "c") {
-    ShowCores()
-  } else if (key = "w") {
-    CloseChart()
-  } else if (key = "r" and not WinActive("Flowsheet")) {
-    Refresh()
-  } else if ((key = "#" or key = "3") and CalcEnabled) {
-    ShowCalculator()
-  } else {
-    HandleSecondaryKey(key)
-  }
+  HandleHelpKey(key)
 Return
 
 ; ---------------------------------------------------
@@ -1102,6 +1136,9 @@ Return
 
 StartBridge:
   global BridgeStarted
+  if (BridgeStarted) {
+    Return
+  }
   
   ; Only try to launch the bridge once automatically
   SetTimer, StartBridgeWhenIdle, Off
