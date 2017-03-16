@@ -124,12 +124,12 @@ highDoseAmox(kg) {
 
 f(drug) {
   SendInput, {Esc}
-  bridge("open http://www.crlonline.com/lco/action/search?t=name&q=" . drug)
+  bridge("http://www.crlonline.com/lco/action/search?t=name&q=" . drug)
 }
 
-pathway(name) {
+path(name) {
   SendInput, {Esc}
-  bridge("open http://child.childrens.sea.kids/search.aspx?searchtext=csw%20pathway%20full%20list%20" . name)
+  bridge("http://child.childrens.sea.kids/search.aspx?searchtext=csw%20pathway%20full%20list%20" . name)
 }
 
 ;	Modified from www.autohotkey.net/~polyethene/#dateparse
@@ -157,9 +157,35 @@ DateParse(str) {
 	Return, d
 }
 
-bridge(cmd) {
-  filedelete, o:\schbridge.txt
-  fileappend, % cmd, o:\schbridge.txt
+bridge(url) {
+  if (FileExist("o:\")) {
+    ensureBridge()
+    filedelete, o:\schbridge.txt
+    fileappend, % "open " . url, o:\schbridge.txt
+  } else {
+    Run, %url%
+  }
+}
+
+ensureBridge() {
+  SetTitleMatchMode RegEx
+  DetectHiddenWindows, On
+
+  if (not WinExist("schbridge") and FileExist("o:\schbridge.exe")) {
+    TrayTip, , Starting internet bridge, 30
+    Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
+    WinWait, % "childrens\\files", , 30
+    if (ErrorLevel = 0) {
+      WinActivate, % "childrens\\files"
+      WinWaitActive, % "childrens\\files"
+      SendInput, !d
+      Sleep, 800
+      SendInput, O:\schbridge.exe{enter}
+      Sleep, 350
+      WinKill
+    }
+  }
+Return
 }
 
 ; Bilirubin lightable levels from bilitool.org 

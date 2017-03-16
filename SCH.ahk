@@ -13,8 +13,6 @@ SetDefaultMouseSpeed, 0
 AHKExe := A_Temp . "\AutoHotKey.exe"
 FileInstall, AutoHotKey.exe, % AHKExe, 1
 CalcEnabled := FileExist(AHKexe)
-BridgeStarted := WinExist("schbridge")
-SetTimer, StartBridgeWhenIdle, 20000
 
 ; ---------------------------------------------------------
 ; UI setup
@@ -30,20 +28,14 @@ Gui, Splash:Font, s14
 Gui, Splash:Add, Text, x0 y10 w%splash_w% center, CIS shortcuts enabled. Ctrl+? for help.
 Gui, Splash:-Caption +alwaysontop +Toolwindow +Border
 Gui, Splash:Show, x%splash_x% y%splash_y% w%splash_w% NoActivate,
-Sleep 100
-Loop {
-  If (A_TimeIdlePhysical < 100 or A_TimeIdlePhysical > 2500) {
-    break
-  }
-}
-Gui, Splash:Destroy
+SetTimer, HideSplash, -2500
 
 ; Notification window
 notify_w := 200
 notify_x := A_ScreenWidth - notify_w - 25
 notify_y := A_ScreenHeight - 100
 Gui, Notify:Font, s12
-Gui, Notify:Add, Text, x0 y10 w%notify_w% center, Internet connected
+Gui, Notify:Add, Text, x0 y10 w%notify_w% center, Message
 Gui, Notify:-Caption +alwaysontop +Toolwindow +Border
 
 ; Calculator window -  combobox to type in and OK button (activated by enter)
@@ -53,7 +45,7 @@ mivf: weight in kg - maintenance IVF rate
 w: weight - convert lbs / kg
 t: temp - convert C / F
 f: drug - open formulary (internet bridge must be started)
-pathway: name - open pathway (internet bridge must be started)
+path: name - open pathway (internet bridge must be started)
 Up/Down arrows - see previous calculations
 )
 CalcHistory := []
@@ -70,6 +62,13 @@ ShowCalculator() {
   CalcWinH := CalcY + 24
   CalcWinWidth := CalcWidth - 23
   Gui, Calc:Show, H%CalcWinH% W%CalcWinWidth%
+}
+
+; ---------------------------------------------------------
+; Start internet access
+; ---------------------------------------------------------
+if (not WinExist("schbridge")) {
+  GoSub, StartBridge
 }
 
 ; ---------------------------------------------------------
@@ -201,7 +200,7 @@ ImageExists(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
   maxX := (maxX = 0) ? W : maxX
   maxY := (maxY = 0) ? H : maxY
   ImageSearch, X, Y, %minX%, %minY%, %maxX%, %maxY%, %image%
-  return (ErrorLevel = 0)
+  return (ErrorLevel = 0) ? [X, Y] : false
 }
 ImageSearchAll(ByRef Arr, image, max:=0, minX:=0, minY:=0, maxX:=0, maxY:=0, orientation:="Vertical") {
   WinGetActiveStats, _, W, H, _, _
@@ -230,11 +229,23 @@ ImageSearchAll(ByRef Arr, image, max:=0, minX:=0, minY:=0, maxX:=0, maxY:=0, ori
   }
   return (Arr.length() > 0)
 }
-ImageClick(image, n:=1, minX:=0, minY:=0, maxX:=0, maxY:=0, offsetX:=0, offsetY:=0, orientation:="Vertical") {
-  ImageSearchAll(images, image, n, minX, minY, maxX, maxY, orientation)
+ImageClick(image, minX:=0, minY:=0, maxX:=0, maxY:=0, offsetX:=0, offsetY:=0, n:=1) {
+  ImageSearchAll(images, image, n, minX, minY, maxX, maxY)
   if (images.MaxIndex() >= n) {
     MouseClick, , % images[n][1] + offsetX, % images[n][2] + offsetY
-    return true   
+    return images[n]
+  }
+  return false
+}
+ImageClickCached(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
+  static imagePosCache := {}
+  coord := imagePosCache[image]
+  coord := coord ? coord : ImageWait(image, 0.5, minX, minY, maxX, maxY)
+  imagePosCache[image] := coord
+  
+  if (coord) {
+    MouseClick, , % coord[1], % coord[2]
+    return coord
   }
   return false
 }
@@ -254,7 +265,7 @@ ImageWait(image, sec:=5, minX:=0, minY:=0, maxX:=0, maxY:=0, onlyWhileIdle:=fals
   Loop {
     ImageSearch, X, Y, %minX%, %minY%, %maxX%, %maxY%, %image%
     if (ErrorLevel = 0) {
-      return true
+      return [X, Y]
     }
     Sleep, 100
     if ((A_TickCount - start > maxMs) or (onlyWhileIdle and A_TimeIdle < 100)) {
@@ -274,6 +285,14 @@ WinWait(title, sec:=5) {
     }
     Sleep, 300
   }
+}
+WinWaitAndActivate(title, sec:="") {
+  WinWait, %title%, , %sec%
+  if (ErrorLevel = 0) {
+    WinActivate, %title%
+    WinWaitActive, %title%
+  }
+  return (ErrorLevel = 0)
 }
 CursorNotBusyWait(sec:=5) {   ; Not compatible with citrix: A_Cursor = "Unknown"
   maxMs := sec * 1000
@@ -319,10 +338,10 @@ ShowNotes() {
     MouseClick, , 190, 260
     MouseMove, %X%, %Y%
   } else {
-    ImageClick("ptmenu.png", , , , 500, 70)
-    if (ImageExists("firstneticon.png") and ImageWait("ptnotes2.png", 1, 70, , 400, 600) and ImageClick("ptnotes2.png")) {
+    ImageClickCached("ptmenu.png", 0, 0, 500, 70)
+    if (ImageExists("firstneticon.png") and ImageClickCached("ptnotes2.png", 70, 0, 400, 600)) {
       MouseMove, 250, 360
-    } else if (ImageWait("ptnotes.png", 1, 70, , 400, 600) and ImageClick("ptnotes.png")) {
+    } else if (ImageClickCached("ptnotes.png", 70, 0, 400, 600)) {
       MouseMove, 250, 360
     } else {
       Shake()
@@ -335,8 +354,8 @@ ShowDocuments() {
     MouseClick, , 190, 40
     MouseClick, , 190, 245
   } else {
-    ImageClick("ptmenu.png", , , , 500, 70)
-    if (ImageWait("ptdocuments.png", 1, 70, , 400, 600) and ImageClick("ptdocuments.png")) {
+    ImageClickCached("ptmenu.png", 0, 0, 500, 70)
+    if (ImageClickCached("ptdocuments.png", 70, 0, 400, 600)) {
       MouseMove, 240, 290
     } else {
       Shake()
@@ -356,8 +375,8 @@ ShowOrders() {
       MouseClick, , 190, 40
       MouseClick, , 190, 415
     } else {
-      ImageClick("ptmenu.png", , , , 500, 70)
-      if (not (ImageWait("ptorders.png", 1, 70, , 400, 600) and ImageClick("ptorders.png"))) {
+      ImageClickCached("ptmenu.png", 0, 0, 500, 70)
+      if (not ImageClickCached("ptorders.png", 70, 0, 400, 600)) {
         Shake()
       }
     }
@@ -372,13 +391,12 @@ ShowVitals() {
     MouseClick, , 190, 790
     MouseMove, %X%, %Y%
   } else {
-    ImageClick("ptmenu.png", , , , 500, 70)
-    Sleep, 100
-    ImageClick("ptflowsheets.png")
+    ImageClickCached("ptmenu.png", 0, 0, 500, 70)
+    ImageClickCached("ptflowsheets.png", 70, 0, 400, 600)
     MouseMove, %X%, %Y%
     if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
       MouseGetPos X, Y
-      ImageClick("provideroverview.png", , 0, 0, 1000, 350)
+      ImageClick("provideroverview.png", , , 1000, 350)
       MouseMove, %X%, %Y%
     }
   }
@@ -391,13 +409,12 @@ ShowLabs() {
     MouseClick, , 190, 855
     MouseMove, %X%, %Y%
   } else {
-    ImageClick("ptmenu.png", , , , 500, 70)
-    Sleep, 100
-    ImageClick("ptflowsheets.png")
+    ImageClickCached("ptmenu.png", 0, 0, 500, 70)
+    ImageClickCached("ptflowsheets.png", 70, 0, 400, 600)
     MouseMove, %X%, %Y%
     if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
       MouseGetPos X, Y
-      ImageClick("labs.png", , 0, 0, 1000, 350)
+      ImageClick("labs.png", , , 1000, 350)
       MouseMove, %X%, %Y%
     }
   }
@@ -409,8 +426,8 @@ ShowIView() {
     MouseClick, , 190, 40
     MouseClick, , 190, 525
   } else {
-    ImageClick("ptmenu.png", , , , 500, 70)
-    if (not (ImageWait("ptiview.png", 1, 70, , 400, 600) and ImageClick("ptiview.png"))) {
+    ImageClickCached("ptmenu.png", 0, 0, 500, 70)
+    if (not ImageClickCached("ptiview.png", 70, 0, 400, 600)) {
       Shake()
     }
   }
@@ -423,8 +440,8 @@ ShowMAR() {
     MouseClick, , 190, 40
     MouseClick, , 190, 460
   } else {
-    ImageClick("ptmenu.png", , , , 500, 70)
-    if (not (ImageWait("ptmarsummary.png", 1, 70, , 400, 600) and ImageClick("ptmarsummary.png"))) {
+    ImageClickCached("ptmenu.png", 0, 0, 500, 70)
+    if (not ImageClickCached("ptmarsummary.png", 70, 0, 400, 600)) {
       Shake()
     }
   }
@@ -437,8 +454,8 @@ ShowPatientSummary() {
     MouseClick, , 190, 40
     MouseClick, , 190, 85
   } else {
-    ImageClick("ptmenu.png", , , , 500, 70)
-    if (not (ImageWait("ptsummary.png", 1, 70, , 400, 600) and ImageClick("ptsummary.png"))) {
+    ImageClickCached("ptmenu.png", 0, 0, 500, 70)
+    if (not ImageClickCached("ptsummary.png", 70, 0, 400, 600)) {
       Shake()
     }
   }
@@ -449,7 +466,7 @@ ShowPatientList() {
   MouseGetPos X, Y
   ImageClick("orcaptlist.png")
   Sleep, 200
-  ImageClick("hilitedrow.png", , , , 30, , 40) 
+  ImageClick("hilitedrow.png", , , 30, , 40) 
   MouseMove, %X%, %Y%
 }
 ShowEDBoard() {
@@ -474,7 +491,6 @@ ShowDischarge() {
     MouseClick, , 190, 615
   } else {
     ImageClick("ptactionsmenu.png")
-    ;MouseClick, , 360, 40
     if (ImageWaitWhileIdle("discharge.png")) {
       MouseGetPos X, Y
       ImageClick("discharge.png")
@@ -516,7 +532,7 @@ Refresh() {
 ; -----------------------------------------------------------------------------
 OpenNextClipboard() {
   ; Next clipboard (click 2nd clipboard icon - first one is column header)
-  if (not ImageClick("clipboard.png", 2)) {
+  if (not ImageClick("clipboard.png", , , , , , , 2)) {
     Shake()
   }
 }
@@ -666,12 +682,12 @@ EditCORESinNotepad() {
   s := ""
   Clipboard := ""
   
-  if (ImageClick("coresplan.png", , , , 200, , 10, 45) or ImageClick("coresactiveissues.png", , , , 200, , 10, 45)) {
+  if (ImageClick("coresplan.png", , , 200, , 10, 45) or ImageClick("coresactiveissues.png", , , 200, , 10, 45)) {
     s := CopyAllText()
   }
 
   Sleep, 200
-  if (ImageClick("coresnotes.png", , , , 900, , 10, 45)) {
+  if (ImageClick("coresnotes.png", , , 900, , 10, 45)) {
     t := CopyAllText()
     s := s . "`r`n`r`n" . t
   }
@@ -728,7 +744,7 @@ SaveNotepadToCORES() {
       notes := ""
     }
 
-    if (ImageClick("coresplan.png", , , , 200, , 10, 45) or ImageClick("coresactiveissues.png", , , , 200, , 10, 45)) {
+    if (ImageClick("coresplan.png", , , 200, , 10, 45) or ImageClick("coresactiveissues.png", , , 200, , 10, 45)) {
       Clipboard := plan
       SendInput, ^a
       Sleep, 300
@@ -736,7 +752,7 @@ SaveNotepadToCORES() {
 
       SendInput, ^v
       
-      if (notes != "" and ImageClick("coresnotes.png", , , , 900, , 10, 45)) {
+      if (notes != "" and ImageClick("coresnotes.png", , , 900, , 10, 45)) {
         Sleep, 200
         Clipboard := ""
         
@@ -977,7 +993,7 @@ Return
 ^?::
 ^/::
   ; Window size and location
-  h := 400
+  h := 338
   w := 500
   titleh := 40
   col2x := w/2 - 10
@@ -1011,12 +1027,6 @@ Return
   Gui, Add, Text, xs, E - ED Board (FirstNet) (or Ctrl + E)
 
   Gui, Font, w700
-  Gui, Add, Text, xs, Other
-  Gui, Font, w100
-  Gui, Add, Text, xs, Ctrl + ? - This help screen
-  Gui, Add, Text, xs, Ctrl + Backspace - Logout
-
-  Gui, Font, w700
   Gui, Add, Text, Section x%col2x% y%titleh%, Orders
   Gui, Font, w100
   Gui, Add, Text, xs, D - Add Order or Note  (or Ctrl+K then D)
@@ -1030,13 +1040,6 @@ Return
   Gui, Add, Text, xs, R - Mark flowsheet read  (or Ctrl+K then R)
 
   Gui, Font, w700
-  Gui, Add, Text, xs, Vitals
-  Gui, Font, w100
-  Gui, Add, Text, xs, * - Check all boxes  (or Ctrl+K then *)
-  Gui, Add, Text, xs, 8 - Uncheck all boxes  (or Ctrl+K then 8)
-  Gui, Add, Text, xs, G - Graph  (or Ctrl+K then G)
-
-  Gui, Font, w700
   Gui, Add, Text, xs, CORES
   Gui, Font, w100
   Gui, Add, Text, xs, % WinActive("Notepad") ? "E - Copy document to CORES" : "E - Edit plan in Notepad"
@@ -1044,8 +1047,10 @@ Return
   Gui, Add, Text, xs, W - Save && Exit  (or Ctrl+W)
 
   Gui, Font, w700
-  Gui, Add, Text, xs, 
+  Gui, Add, Text, xs, Other
   Gui, Font, w100
+  Gui, Add, Text, xs, Ctrl + ? - This help screen
+  Gui, Add, Text, xs, Ctrl + Backspace - Logout
   if (CalcEnabled) {
     Gui, Add, Text, xs, # - Calculator (or Ctrl+Shift+Alt + 3)
     h := h + 20
@@ -1121,50 +1126,35 @@ Return
 #If
 
 ; ---------------------------------------------------
-; Tray menu handlers
+; Event handlers
 ; ---------------------------------------------------
+HideSplash:
+  Gui, Splash:Destroy
+Return
+
 StartBridgeWhenIdle:
-  global BridgeStarted
-  if (BridgeStarted or WinExist("schbridge")) {
+  if (WinExist("schbridge")) {
     ; If already started, don't need to relaunch, so stop timer
-    SetTimer, StartBridgeWhenIdle, Off
-  } else if (A_TimeIdle > (3 * 60 * 1000)) {
-    ; Autostart after 3 minute idle
+    SetTimer, StartBridgeWhenIdle, Delete
+  } else if (A_TimeIdle > (3 * 60 * 1000) and WinExist("sch", , "notepad|schapp")) {
+    ; Autostart after 3 minute idle and only while SCH.ahk window also detected (i.e. not while locked)
     Goto, StartBridge
   }
 Return
 
 StartBridge:
-  global BridgeStarted
-  if (BridgeStarted) {
-    Return
-  }
-  
-  ; Only try to launch the bridge once automatically
-  SetTimer, StartBridgeWhenIdle, Off
+  ; Don't try to autostart bridge anymore
+  SetTimer, StartBridgeWhenIdle, Delete
 
   TrayTip, , Starting internet bridge, 30
 
   FileInstall, schbridge.exe, o:\schbridge.exe, 1
   Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
-  if (ImageWait("networkdrive.png", 45)) {
-    MouseGetPos X, Y
-    if (not ImageClick("networkdrive.png")) {
-      ; If can't click icon, try Alt+D
-      SendInput, !d
-    }
-
+  if (WinWaitAndActivate("childrens\\files", 45)) {
+    SendInput, !d
     Sleep, 800
     SendInput, O:\schbridge.exe{enter}
     Sleep, 350
-    if (not ImageClick("winclose.png")) {
-      ; Try Alt+F4 if unable to click close window button
-      SendInput, !{F4}
-    }
-    MouseMove, %X%, %Y%
-    
-    BridgeStarted := true
-    Return
+    WinKill
   }
-  Shake()
 Return
