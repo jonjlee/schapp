@@ -127,6 +127,11 @@ f(drug) {
   bridge("http://www.crlonline.com/lco/action/search?t=name&q=" . drug)
 }
 
+u(search) {
+  SendInput, {Esc}
+  bridge("https://www.uptodate.com/contents/search?search=" . search)
+}
+
 path(name) {
   SendInput, {Esc}
   bridge("http://child.childrens.sea.kids/search.aspx?searchtext=csw%20pathway%20full%20list%20" . name)
@@ -167,23 +172,36 @@ bridge(url) {
   }
 }
 
+WinWaitAndActivate(title, sec:="") {
+  WinWait, %title%, , %sec%
+  if (ErrorLevel = 0) {
+    WinActivate, %title%
+    WinWaitActive, %title%, , 2
+    Sleep, 250
+  }
+  return (ErrorLevel = 0)
+}
+
 ensureBridge() {
   SetTitleMatchMode RegEx
   DetectHiddenWindows, On
 
   if (not WinExist("schbridge") and FileExist("o:\schbridge.exe")) {
-    TrayTip, , Starting internet bridge, 30
-    Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
-    WinWait, % "childrens\\files", , 30
-    if (ErrorLevel = 0) {
-      WinActivate, % "childrens\\files"
-      WinWaitActive, % "childrens\\files"
-      SendInput, !d
-      Sleep, 800
-      SendInput, O:\schbridge.exe{enter}
-      Sleep, 350
-      WinKill
-    }
+      TrayTip, , Starting internet bridge, 30
+      Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
+      WinWait, % "childrens\\files", , 30
+      if (ErrorLevel = 0) {
+        WinActivate, % "childrens\\files"
+        WinWaitActive, % "childrens\\files"
+        BlockInput, On
+        Sleep, 350
+        SendInput, !d
+        Sleep, 800
+        SendInput, O:\schbridge.exe{enter}
+        Sleep, 350
+        WinClose
+        BlockInput, Off
+      }
   }
 Return
 }

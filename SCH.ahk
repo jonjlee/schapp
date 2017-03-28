@@ -44,8 +44,9 @@ CalcFunctions =
 mivf: weight in kg - maintenance IVF rate
 w: weight - convert lbs / kg
 t: temp - convert C / F
-f: drug - open formulary (internet bridge must be started)
-path: name - open pathway (internet bridge must be started)
+f: drug - open formulary (starts internet bridge if needed)
+u: search - search uptodate (starts internet bridge if needed)
+path: name - open pathway (starts internet bridge if needed)
 Up/Down arrows - see previous calculations
 )
 CalcHistory := []
@@ -67,7 +68,7 @@ ShowCalculator() {
 ; ---------------------------------------------------------
 ; Start internet access
 ; ---------------------------------------------------------
-if (not WinExist("schbridge")) {
+if (not WinExist("schbridge") and not TESTING) {
   GoSub, StartBridge
 }
 
@@ -136,6 +137,7 @@ FileInstall, img\ptnotes.png, img\ptnotes.png, 1
 FileInstall, img\ptorders.png, img\ptorders.png, 1
 FileInstall, img\ptsummary.png, img\ptsummary.png, 1
 FileInstall, img\refresh.png, img\refresh.png, 1
+FileInstall, img\schbridgeicon.png, img\schbridgeicon.png, 1
 FileInstall, img\seen.png, img\seen.png, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
 FileInstall, img\vitalsigns.png, img\vitalsigns.png, 1
@@ -273,24 +275,16 @@ ImageWait(image, sec:=5, minX:=0, minY:=0, maxX:=0, maxY:=0, onlyWhileIdle:=fals
     }
   }
 }
-WinWait(title, sec:=5) {
-  maxMs := sec * 1000
-  start := A_TickCount
-  Loop {
-    if (WinActive(title)) {
-      return true
-    }
-    if (A_TickCount - start > maxMs) {
-      return false
-    }
-    Sleep, 300
-  }
+WinWaitActive(title, sec:=5) {
+  WinWaitActive, % title, , % sec
+  return (ErrorLevel = 0)
 }
 WinWaitAndActivate(title, sec:="") {
   WinWait, %title%, , %sec%
   if (ErrorLevel = 0) {
     WinActivate, %title%
-    WinWaitActive, %title%
+    WinWaitActive, %title%, , 2
+    Sleep, 250
   }
   return (ErrorLevel = 0)
 }
@@ -549,7 +543,7 @@ MarkClipboardRead() {
   }
 
   ; Wait for results popup to disappear and main window to reactivate
-  WinWait("PowerChart|FirstNet")
+  WinWaitActive("PowerChart|FirstNet")
   Sleep, 100
   ImageClick("refresh.png")
 }
@@ -579,7 +573,7 @@ MarkAllClipboardsRead() {
     }
     
     ; Wait for flowsheet to appear - look for seen button
-    if (not ImageWait("seen.png", 20)) {
+    if (not WinWaitActive("Flowsheet", 20)) {
       Shake()
       Return
     }
@@ -597,7 +591,7 @@ MarkAllClipboardsRead() {
       ImageClick("exit2.png")
     }
 
-    if (not WinWait("PowerChart|FirstNet")) {
+    if (not WinWaitActive("PowerChart|FirstNet")) {
       Shake()
       Return
     }
@@ -633,14 +627,6 @@ ToggleAllOrders() {
   ImageClick("dropdown.png")
   Sleep, 500
   if (not ImageClick(image)) {
-    Shake()
-  }
-}
-ShowActiveOrders() {
-  ; Click dropdown, wait for menu to show, then select Active Orders
-  ImageClick("dropdown.png")
-  Sleep, 500
-  if (not ImageClick("ordersactive.png")) {
     Shake()
   }
 }
@@ -693,11 +679,11 @@ EditCORESinNotepad() {
   }
   
   WinActivate, Notepad++
-  if (WinWait("Notepad++", 0.5)) {
+  if (WinWaitActive("Notepad++", 0.5)) {
     SendInput, ^n
   } else {
     Run, Notepad.exe
-    if (not WinWait("Notepad", 1)) {
+    if (not WinWaitActive("Notepad", 2)) {
       Shake()
     }
   }
@@ -738,7 +724,7 @@ SaveNotepadToCORES() {
   Sleep, 50
   
   WinActivate, CORES
-  if (WinWait("CORES", 2)) {
+  if (WinWaitActive("CORES", 2)) {
     if (notesLen > 0 and not ImageExists("coresnotes.png")) {
       plan .= "`r`n`r`n" . notes
       notes := ""
@@ -868,10 +854,12 @@ QuickSig() {
 ; Shortcut keys
 ; -----------------------------------------------------------------------------
 HandleHelpKey(key) {
-  ; Handle a key press from the help screen
+  global CalcEnabled
+
+    ; Handle a key press from the help screen
   if (key = "") {
     Return
-  } else if (key = "s") {
+  } else if (key = "s" and not WinActive("CORES")) {
     ShowPatientSummary()
   } else if (key = "n") {
     ShowNotes()
@@ -1132,29 +1120,34 @@ HideSplash:
   Gui, Splash:Destroy
 Return
 
-StartBridgeWhenIdle:
-  if (WinExist("schbridge")) {
-    ; If already started, don't need to relaunch, so stop timer
-    SetTimer, StartBridgeWhenIdle, Delete
-  } else if (A_TimeIdle > (3 * 60 * 1000) and WinExist("sch", , "notepad|schapp")) {
-    ; Autostart after 3 minute idle and only while SCH.ahk window also detected (i.e. not while locked)
-    Goto, StartBridge
-  }
-Return
-
 StartBridge:
-  ; Don't try to autostart bridge anymore
-  SetTimer, StartBridgeWhenIdle, Delete
-
   TrayTip, , Starting internet bridge, 30
-
   FileInstall, schbridge.exe, o:\schbridge.exe, 1
-  Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
-  if (WinWaitAndActivate("childrens\\files", 45)) {
-    SendInput, !d
-    Sleep, 800
-    SendInput, O:\schbridge.exe{enter}
-    Sleep, 350
-    WinKill
+
+  Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:Notepad00B5"
+  if (WinWaitAndActivate("Untitled - Notepad", 45)) {
+    SendInput, ^o
+    WinWaitActive, Open, , 2
+    if (ErrorLevel != 0) {
+      Shake()
+      return
+    }
+    BlockInput, On
+    Sleep, 100
+    SendInput, o:\desktop\..{enter}
+    Sleep, 250
+    SendInput, *.exe{enter}
+    iconXY := ImageWait("schbridgeicon.png", 2)
+    if (iconXY) {
+      MouseClick, right, % iconXY[1], % iconXY[2]
+      Sleep, 500
+      SendInput, o
+      Sleep, 350
+    }
+    SendInput, {esc}
+    if (WinWaitAndActivate("Untitled - Notepad", 5)) {
+      WinClose
+    }
+    BlockInput, Off
   }
 Return
