@@ -187,21 +187,27 @@ ensureBridge() {
   DetectHiddenWindows, On
 
   if (not WinExist("schbridge") and FileExist("o:\schbridge.exe")) {
-      TrayTip, , Starting internet bridge, 30
-      Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
-      WinWait, % "childrens\\files", , 30
-      if (ErrorLevel = 0) {
-        WinActivate, % "childrens\\files"
-        WinWaitActive, % "childrens\\files"
-        BlockInput, On
-        Sleep, 350
-        SendInput, !d
-        Sleep, 800
-        SendInput, O:\schbridge.exe{enter}
-        Sleep, 350
-        WinClose
-        BlockInput, Off
+    Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
+    
+    DetectHiddenWindows, Off
+    WinWait, % "childrens\\files", , 30
+    Sleep, 100
+    if (ErrorLevel = 0) {
+      WinActivate, % "childrens\\files"
+      WinWaitActive, % "childrens\\files", , 2
+      if (ErrorLevel != 0) {
+        Return
       }
+      
+      BlockInput, On
+      Sleep, 350
+      SendInput, !d
+      Sleep, 800
+      SendInput, O:\schbridge.exe{enter}
+      Sleep, 350
+      WinClose
+      BlockInput, Off
+    }
   }
 Return
 }

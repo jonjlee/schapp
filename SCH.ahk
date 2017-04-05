@@ -68,9 +68,9 @@ ShowCalculator() {
 ; ---------------------------------------------------------
 ; Start internet access
 ; ---------------------------------------------------------
-if (not WinExist("schbridge") and not TESTING) {
-  GoSub, StartBridge
-}
+;if (not WinExist("schbridge") and not TESTING) {
+;  GoSub, StartBridge
+;}
 
 ; ---------------------------------------------------------
 ; Install script
@@ -276,7 +276,7 @@ ImageWait(image, sec:=5, minX:=0, minY:=0, maxX:=0, maxY:=0, onlyWhileIdle:=fals
   }
 }
 WinWaitActive(title, sec:=5) {
-  WinWaitActive, % title, , % sec
+  WinWaitActive, %title%, , %sec%
   return (ErrorLevel = 0)
 }
 WinWaitAndActivate(title, sec:="") {
@@ -678,11 +678,14 @@ EditCORESinNotepad() {
     s := s . "`r`n`r`n" . t
   }
   
-  WinActivate, Notepad++
-  if (WinWaitActive("Notepad++", 0.5)) {
+  WinActivate, % "Notepad\+\+"
+  if (WinWaitActive("Notepad\+\+", 0.5)) {
     SendInput, ^n
   } else {
-    Run, Notepad.exe
+    try {
+      Run, C:\Windows\Notepad.exe
+    } catch e {
+    }
     if (not WinWaitActive("Notepad", 2)) {
       Shake()
     }
@@ -690,6 +693,8 @@ EditCORESinNotepad() {
   Sleep, 100
 
   SetClipboard(s)
+  SendInput, ^a
+  Sleep, 200
   SendInput, ^v
   SendInput, ^{home}
   Sonar()
@@ -1040,7 +1045,7 @@ Return
   Gui, Add, Text, xs, Ctrl + ? - This help screen
   Gui, Add, Text, xs, Ctrl + Backspace - Logout
   if (CalcEnabled) {
-    Gui, Add, Text, xs, # - Calculator (or Ctrl+Shift+Alt + 3)
+    Gui, Add, Text, xs, # - Calculator (or Ctrl+Shift + 3)
     h := h + 20
     y := y - 20
   }
@@ -1066,6 +1071,7 @@ Return
 ; Enable calculator GUI only if AutoHotKey.exe is available
 #If CalcEnabled
 ^!+3::
+^+3::
   ; show, but cut off combobox dropdown & ok button
   ShowCalculator()
 Return
@@ -1104,12 +1110,17 @@ CalcButtonOK:
   calcFile = %A_Temp%\docalc.ahk
   resFile = %A_Temp%\docalc.res
   FileDelete %calcFile%
-  FileAppend #NoTrayIcon`n#Include %A_Temp%\CalcFuns.ahk`nFileDelete %resFile%`n%pre%`nFileAppend `% (%CalcExpr%)`, %resFile%`n, %calcFile%
-  RunWait %AHKExe% %calcFile%
+  ;FileAppend #NoTrayIcon`n#Include %A_Temp%\CalcFuns.ahk`nFileDelete %resFile%`n%pre%`nFileAppend `% (%CalcExpr%)`, %resFile%`n, %calcFile%
+  FileAppend #Include %A_Temp%\CalcFuns.ahk`nFileDelete %resFile%`n%pre%`nFileAppend `% (%CalcExpr%)`, %resFile%`n, %calcFile%
+  
+  try {
+    RunWait %AHKExe% %calcFile%
 
-  ; get result and show
-  FileRead Result, %resFile%
-  GuiControl, Text, CalcExpr, %Result%
+    ; get result and show
+    FileRead Result, %resFile%
+    GuiControl, Text, CalcExpr, %Result%
+  } catch e {
+  }
 Return
 #If
 
@@ -1122,6 +1133,7 @@ Return
 
 StartBridge:
   TrayTip, , Starting internet bridge, 30
+  FileDelete, o:\schbridge.txt
   FileInstall, schbridge.exe, o:\schbridge.exe, 1
 
   Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:Notepad00B5"

@@ -22,10 +22,7 @@ FileRead cmd, % inFile
 if (cmd != "") {
   RegExMatch(cmd, "^([^ ]+)(?: (.*))?$", p)
   if (p1 = "OPEN") {
-    try {
-      Run, % cmd
-    } catch e {
-    }
+    Run, % cmd
   } else if (p1 = "PING") {
     filedelete, % outFile
     fileappend, alive, % outFile
