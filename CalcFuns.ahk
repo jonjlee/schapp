@@ -163,7 +163,8 @@ DateParse(str) {
 }
 
 bridge(url) {
-  if (FileExist("o:\")) {
+  ; Bridge is no longer needed with VDI upgrade
+  if (false && FileExist("o:\")) {
     ensureBridge()
     filedelete, o:\schbridge.txt
     fileappend, % "open " . url, o:\schbridge.txt
@@ -187,7 +188,12 @@ ensureBridge() {
   DetectHiddenWindows, On
 
   if (not WinExist("schbridge") and FileExist("o:\schbridge.exe")) {
-    Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
+    try {
+      Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:O drive - Home Folder"
+    } catch e {
+      Msgbox, Unable to start internet bridge.
+      Return
+    }
     
     DetectHiddenWindows, Off
     WinWait, % "childrens\\files", , 30

@@ -17,9 +17,6 @@ CalcEnabled := FileExist(AHKexe)
 ; ---------------------------------------------------------
 ; UI setup
 ; ---------------------------------------------------------
-; Tray menu
-Menu, tray, add, Start Internet Bridge, StartBridge
-
 ; Splash screen
 splash_w := 400
 splash_x := A_ScreenWidth - splash_w - 25
@@ -44,9 +41,9 @@ CalcFunctions =
 mivf: weight in kg - maintenance IVF rate
 w: weight - convert lbs / kg
 t: temp - convert C / F
-f: drug - open formulary (starts internet bridge if needed)
-u: search - search uptodate (starts internet bridge if needed)
-path: name - open pathway (starts internet bridge if needed)
+f: drug - open formulary
+u: search - search uptodate
+path: name - open pathway
 Up/Down arrows - see previous calculations
 )
 CalcHistory := []
@@ -66,13 +63,6 @@ ShowCalculator() {
 }
 
 ; ---------------------------------------------------------
-; Start internet access
-; ---------------------------------------------------------
-;if (not WinExist("schbridge") and not TESTING) {
-;  GoSub, StartBridge
-;}
-
-; ---------------------------------------------------------
 ; Install script
 ; ---------------------------------------------------------
 ; Create hidden directory and install images
@@ -80,6 +70,7 @@ if (not FileExist("img")) {
   FileCreateDir, img
   FileSetAttrib, +H, img
 }
+FileInstall, Disconnect.exe, Disconnect.exe, 1
 FileInstall, img\add.png, img\add.png, 1
 FileInstall, img\add2.png, img\add2.png, 1
 FileInstall, img\add3.png, img\add3.png, 1
@@ -91,16 +82,18 @@ FileInstall, img\close.png, img\close.png, 1
 FileInstall, img\cores.png, img\cores.png, 1
 FileInstall, img\coresactiveissues.png, img\coresactiveissues.png, 1
 FileInstall, img\coresexit.png, img\coresexit.png, 1
+FileInstall, img\coresexit2.png, img\coresexit2.png, 1
 FileInstall, img\coresnotes.png, img\coresnotes.png, 1
 FileInstall, img\coresplan.png, img\coresplan.png, 1
 FileInstall, img\coressave.png, img\coressave.png, 1
+FileInstall, img\coressave2.png, img\coressave2.png, 1
 FileInstall, img\discharge.png, img\discharge.png, 1
 FileInstall, img\dropdown.png, img\dropdown.png, 1
 FileInstall, img\edboard.png, img\edboard.png, 1
 FileInstall, img\exit.png, img\exit.png, 1
 FileInstall, img\exit2.png, img\exit2.png, 1
 FileInstall, img\firstneticon.png, img\firstneticon.png, 1
-FileInstall, img\flowsheetseeker.png, img\flowsheetseeker.png, 1
+FileInstall, img\flowsheetdropdown.png, img\flowsheetdropdown.png, 1
 FileInstall, img\graph.png, img\graph.png, 1
 FileInstall, img\hilitedrow.png, img\hilitedrow.png, 1
 FileInstall, img\labs.png, img\labs.png, 1
@@ -133,11 +126,10 @@ FileInstall, img\ptflowsheets.png, img\ptflowsheets.png, 1
 FileInstall, img\ptiview.png, img\ptiview.png, 1
 FileInstall, img\ptmarsummary.png, img\ptmarsummary.png, 1
 FileInstall, img\ptmenu.png, img\ptmenu.png, 1
-FileInstall, img\ptnotes.png, img\ptnotes.png, 1
+FileInstall, img\ptnotes2.png, img\ptnotes2.png, 1
 FileInstall, img\ptorders.png, img\ptorders.png, 1
 FileInstall, img\ptsummary.png, img\ptsummary.png, 1
 FileInstall, img\refresh.png, img\refresh.png, 1
-FileInstall, img\schbridgeicon.png, img\schbridgeicon.png, 1
 FileInstall, img\seen.png, img\seen.png, 1
 FileInstall, img\unchecked.png, img\unchecked.png, 1
 FileInstall, img\vitalsigns.png, img\vitalsigns.png, 1
@@ -232,6 +224,7 @@ ImageSearchAll(ByRef Arr, image, max:=0, minX:=0, minY:=0, maxX:=0, maxY:=0, ori
   return (Arr.length() > 0)
 }
 ImageClick(image, minX:=0, minY:=0, maxX:=0, maxY:=0, offsetX:=0, offsetY:=0, n:=1) {
+  ImageWait(image, 0.5, minX, minY, maxX, maxY)
   ImageSearchAll(images, image, n, minX, minY, maxX, maxY)
   if (images.MaxIndex() >= n) {
     MouseClick, , % images[n][1] + offsetX, % images[n][2] + offsetY
@@ -333,9 +326,7 @@ ShowNotes() {
     MouseMove, %X%, %Y%
   } else {
     ImageClickCached("ptmenu.png", 0, 0, 500, 70)
-    if (ImageExists("firstneticon.png") and ImageClickCached("ptnotes2.png", 70, 0, 400, 600)) {
-      MouseMove, 250, 360
-    } else if (ImageClickCached("ptnotes.png", 70, 0, 400, 600)) {
+    if (ImageClickCached("ptnotes2.png", 70, 0, 400, 600)) {
       MouseMove, 250, 360
     } else {
       Shake()
@@ -361,7 +352,7 @@ ShowOrders() {
   MouseGetPos X, Y
   if (ImageExists("ordersselected.png")) {
     ; If already on orders screen, toggle between orders for signature and orders
-    if (not ImageClick(ImagePath("ordersforsig.png", "*0"))) {
+    if (not ImageClickCached(ImagePath("ordersforsig.png", "*0"))) {
       ImageClick("ordersorders.png")
     }
   } else {
@@ -388,8 +379,8 @@ ShowVitals() {
     ImageClickCached("ptmenu.png", 0, 0, 500, 70)
     ImageClickCached("ptflowsheets.png", 70, 0, 400, 600)
     MouseMove, %X%, %Y%
-    if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
       MouseGetPos X, Y
+    if (ImageWaitWhileIdle("flowsheetdropdown.png", , 100, 100, 400, 400)) {
       ImageClick("provideroverview.png", , , 1000, 350)
       MouseMove, %X%, %Y%
     }
@@ -406,9 +397,9 @@ ShowLabs() {
     ImageClickCached("ptmenu.png", 0, 0, 500, 70)
     ImageClickCached("ptflowsheets.png", 70, 0, 400, 600)
     MouseMove, %X%, %Y%
-    if (ImageWaitWhileIdle("flowsheetseeker.png", , 100, 100, 400, 300)) {
+    if (ImageWaitWhileIdle("flowsheetdropdown.png", , 100, 100, 400, 400)) {
       MouseGetPos X, Y
-      ImageClick("labs.png", , , 1000, 350)
+      ImageClickCached("labs.png", , , 1000, 350)
       MouseMove, %X%, %Y%
     }
   }
@@ -505,7 +496,9 @@ CloseChart() {
     }
   } else if (WinActive("CORES")) {
     ; Close CORES via Save & Exit button
-    ImageClick(ImagePath("coresexit.png", "*100"))
+    if (not ImageClick("coresexit.png")) {
+      ImageClick("coresexit2.png")
+    }
   } else {
     ; Try to close any active form by clicking a check mark
     if (not ImageClick("check.png")) {
@@ -659,7 +652,7 @@ ClickGraph() {
 }
 SaveCORES() {
   MouseGetPos X, Y
-  if (not ImageClick("coressave.png")) {
+  if (not ImageClick("coressave.png") and not ImageClick("coressave2.png")) {
     Shake()
   }
   MouseMove, %X%, %Y%
@@ -668,14 +661,8 @@ EditCORESinNotepad() {
   s := ""
   Clipboard := ""
   
-  if (ImageClick("coresplan.png", , , 200, , 10, 45) or ImageClick("coresactiveissues.png", , , 200, , 10, 45)) {
+  if (ImageClick("coresactiveissues.png", , , 200, , 10, 45) or ImageClick("coresplan.png", , , 200, , 10, 45)) {
     s := CopyAllText()
-  }
-
-  Sleep, 200
-  if (ImageClick("coresnotes.png", , , 900, , 10, 45)) {
-    t := CopyAllText()
-    s := s . "`r`n`r`n" . t
   }
   
   WinActivate, % "Notepad\+\+"
@@ -685,6 +672,7 @@ EditCORESinNotepad() {
     try {
       Run, C:\Windows\Notepad.exe
     } catch e {
+      TrayTip, , Could not start Notepad
     }
     if (not WinWaitActive("Notepad", 2)) {
       Shake()
@@ -701,67 +689,17 @@ EditCORESinNotepad() {
 }
 SaveNotepadToCORES() {
   s := CopyAllText()
-  s := StrReplace(s, "`r`n`r`n", "{")
-  paras := StrSplit(s, "{")
-
-  plan := ""
-  planLen := 0
-  notes := ""
-  notesLen := 0
-  Loop % paras.MaxIndex() {
-    ; Count number of chars, giving 10 chars for each encoded newline per what CORES does
-    StrReplace(paras[A_Index], "`n", "", numNewlines)
-    len := StrLen(paras[A_Index]) + 8 * (numNewlines + 2)
-  
-    ; max text field size of 2000, give 100 char buffer
-    if (notes = "" and (planLen + len <= 1900)) {
-      plan .= (plan = "") ? "" : "`r`n`r`n"
-      plan .= paras[A_Index]
-      planLen += len
-    } else {
-      notes .= (notes = "") ? "" : "`r`n`r`n"
-      notes .= paras[A_Index]
-      notesLen += len
-    }
-  }
 
   Clipboard := ""
   Sleep, 50
   
   WinActivate, CORES
-  if (WinWaitActive("CORES", 2)) {
-    if (notesLen > 0 and not ImageExists("coresnotes.png")) {
-      plan .= "`r`n`r`n" . notes
-      notes := ""
-    }
-
-    if (ImageClick("coresplan.png", , , 200, , 10, 45) or ImageClick("coresactiveissues.png", , , 200, , 10, 45)) {
-      Clipboard := plan
-      SendInput, ^a
-      Sleep, 300
-      ClipWait, 0.5
-
-      SendInput, ^v
-      
-      if (notes != "" and ImageClick("coresnotes.png", , , 900, , 10, 45)) {
-        Sleep, 200
-        Clipboard := ""
-        
-        SendInput, ^a
-        Clipboard := notes
-        Sleep, 300
-        ClipWait, 0.5
-
-        SendInput, ^v
-      } else if (notes != "") {
-        MsgBox, NOTES section copied to clipboard, but couldn't find appropriate input box. Please paste manually.
-        return
-      }
-      
-      Sonar()
-    } else if (plan != "") {
-      MsgBox, PLAN section copied to clipboard, but couldn't find appropriate input box. Please paste manually.
-    }
+  if (WinWaitActive("CORES", 2) and (ImageClick("coresactiveissues.png", , , 200, , 10, 45) or ImageClick("coresplan.png", , , 200, , 10, 45))) {
+    Clipboard := s
+    SendInput, ^a
+    Sleep, 300
+    ClipWait, 0.5
+    SendInput, ^v
   } else {
     Shake()
   }
@@ -979,7 +917,7 @@ Return
 
 ; Logout
 ^Backspace::
-  Run, C:\Windows\System32\Disconnect.exe
+  Run, disconnect.exe
 Return
 
 ; Help screen
@@ -1110,8 +1048,7 @@ CalcButtonOK:
   calcFile = %A_Temp%\docalc.ahk
   resFile = %A_Temp%\docalc.res
   FileDelete %calcFile%
-  ;FileAppend #NoTrayIcon`n#Include %A_Temp%\CalcFuns.ahk`nFileDelete %resFile%`n%pre%`nFileAppend `% (%CalcExpr%)`, %resFile%`n, %calcFile%
-  FileAppend #Include %A_Temp%\CalcFuns.ahk`nFileDelete %resFile%`n%pre%`nFileAppend `% (%CalcExpr%)`, %resFile%`n, %calcFile%
+  FileAppend #NoTrayIcon`n#Include %A_Temp%\CalcFuns.ahk`nFileDelete %resFile%`n%pre%`nFileAppend `% (%CalcExpr%)`, %resFile%`n, %calcFile%
   
   try {
     RunWait %AHKExe% %calcFile%
@@ -1129,37 +1066,4 @@ Return
 ; ---------------------------------------------------
 HideSplash:
   Gui, Splash:Destroy
-Return
-
-StartBridge:
-  TrayTip, , Starting internet bridge, 30
-  FileDelete, o:\schbridge.txt
-  FileInstall, schbridge.exe, o:\schbridge.exe, 1
-
-  Run, "C:\Program Files\Citrix\ICA Client\pnagent.exe" /CitrixShortcut: (2) /QLaunch "XenApp65:Notepad00B5"
-  if (WinWaitAndActivate("Untitled - Notepad", 45)) {
-    SendInput, ^o
-    WinWaitActive, Open, , 2
-    if (ErrorLevel != 0) {
-      Shake()
-      return
-    }
-    BlockInput, On
-    Sleep, 100
-    SendInput, o:\desktop\..{enter}
-    Sleep, 250
-    SendInput, *.exe{enter}
-    iconXY := ImageWait("schbridgeicon.png", 2)
-    if (iconXY) {
-      MouseClick, right, % iconXY[1], % iconXY[2]
-      Sleep, 500
-      SendInput, o
-      Sleep, 350
-    }
-    SendInput, {esc}
-    if (WinWaitAndActivate("Untitled - Notepad", 5)) {
-      WinClose
-    }
-    BlockInput, Off
-  }
 Return
