@@ -234,9 +234,14 @@ ImageClick(image, minX:=0, minY:=0, maxX:=0, maxY:=0, offsetX:=0, offsetY:=0, n:
 }
 ImageClickCached(image, minX:=0, minY:=0, maxX:=0, maxY:=0) {
   static imagePosCache := {}
-  coord := imagePosCache[image]
+  static firstNetImagePosCache := {}
+  cache := imagePosCache
+  if (ImageExists("firstneticon.png", 0, 0, 30, 30)) {
+    cache := firstNetImagePosCache
+  }
+  coord := cache[image]
   coord := coord ? coord : ImageWait(image, 0.5, minX, minY, maxX, maxY)
-  imagePosCache[image] := coord
+  cache[image] := coord
   
   if (coord) {
     MouseClick, , % coord[1], % coord[2]
@@ -352,7 +357,7 @@ ShowOrders() {
   MouseGetPos X, Y
   if (ImageExists("ordersselected.png")) {
     ; If already on orders screen, toggle between orders for signature and orders
-    if (not ImageClickCached(ImagePath("ordersforsig.png", "*0"))) {
+    if (not ImageClick(ImagePath("ordersforsig.png", "*0"))) {
       ImageClick("ordersorders.png")
     }
   } else {
@@ -547,6 +552,7 @@ MarkAllClipboardsRead() {
   
   ; Find all clipboard icons and click one at a time. Skip first one, which is column header
   ImageSearchAll(icons, "clipboard.png")
+
   icons.RemoveAt(1)
   for i, icon in icons {
     ; click next clipboard
@@ -728,13 +734,13 @@ QuickSig() {
 
   Sleep, 100
   if (ImageClick("medunit.png")) {
-    Sleep, 100
+    Sleep, 300
     SendPlay, % unit
   }
   
   Sleep, 100
   if (ImageClick("medroute.png")) {
-    Sleep, 100
+    Sleep, 300
     if (route = "PO" or route = "NG") {
       SendPlay, PO or
     } else if (route = "ND") {
@@ -748,7 +754,7 @@ QuickSig() {
   
   Sleep, 100
   if (ImageClick("medfreq.png")) {
-    Sleep, 100
+    Sleep, 300
     if (freq = "QD") {
       SendPlay, once a day     
     } else if (freq = "BID") {
@@ -771,18 +777,23 @@ QuickSig() {
   if (prn != "") {
     Sleep, 100
     if (ImageClick("medprn.png")) {
-      Sleep, 100
+      Sleep, 300
       SendPlay, y
     }
     Sleep, 100
     if (ImageClick("medprnreason.png")) {
-      Sleep, 100
-      SendPlay, other
-    }
-    Sleep, 100
-    if (ImageClick("medinstructions.png")) {
-      Sleep, 100
-      SendPlay, % inst
+      Sleep, 300
+      if (inst != "") {
+        SendPlay, other
+        Sleep, 100
+        if (ImageClick("medinstructions.png")) {
+          Sleep, 300
+          SendPlay, % inst
+        }
+      } else {
+        ; select first reason
+        SendPlay, {PgUp}
+      }
     }
   }
 
